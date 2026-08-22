@@ -1,25 +1,25 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: loanlens_db
+    container_name: loanlens_database
     restart: unless-stopped
     environment:
       POSTGRES_DB: loanlens
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - '5432:5432'
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7-alpine
-    container_name: loanlens_redis
+    container_name: loanlens_redis_setup
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - "6380:6379"
     volumes:
       - redis_data:/data
 
