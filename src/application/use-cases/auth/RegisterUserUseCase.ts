@@ -27,10 +27,41 @@ export class RegisterUserUseCase {
 
     //create user
 
-    const user = await this.userRepo.create({
+    const user = await this.userRepo.createWithProfile({
       email: dto.email,
       passwordHash,
       role: dto.role as UserRole,
+      bank:
+        dto.role === "BANK_ADMIN"
+          ? {
+              name: dto.name!,
+              type: dto.type!,
+              contactEmail: dto.contactEmail || dto.email,
+              contactPhone: dto.contactPhone,
+              gstin: dto.gstin,
+              licenceNumber: dto.licenceNumber,
+              websiteUrl: dto.websiteUrl || undefined,
+            }
+          : undefined,
+      companyDsa:
+        dto.role === "COMPANY_DSA"
+          ? {
+              companyName: dto.companyName!,
+              companyCode: dto.companyCode!,
+              gstin: dto.gstin,
+            }
+          : undefined,
+      fieldAgent:
+        dto.role === "FIELD_AGENT"
+          ? {
+              companyCode: dto.companyCode!,
+              fullName: dto.fullName!,
+              phone: dto.phone!,
+              bankAccountNumber: dto.bankAccountNumber,
+              ifscCode: dto.ifscCode,
+              pan: dto.pan,
+            }
+          : undefined,
     });
 
     //email verification token

@@ -5,7 +5,18 @@ export interface IEmailService {
     name?: string,
   ): Promise<void>;
 
+  sendPortalVerificationEmail(
+    to: string,
+    token: string,
+    name?: string,
+  ): Promise<void>;
+
   sendPasswordResetEmail(
+    to: string,
+    token: string,
+    name?: string,
+  ): Promise<void>;
+  sendPortalPasswordResetEmail(
     to: string,
     token: string,
     name?: string,

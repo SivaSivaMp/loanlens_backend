@@ -6,7 +6,7 @@ import { errorMiddleware } from "./http/middleware/error";
 import { logger } from "@/config/logger";
 
 import authRoutes from "./http/routes/auth.routes";
-
+import portalAuthRoutes from "./http/routes/portal.auth.routes";
 const app = express();
 
 //securitiy
@@ -39,6 +39,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/portal/auth", portalAuthRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((_req, res) => {

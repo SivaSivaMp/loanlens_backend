@@ -11,7 +11,7 @@ export class JwtTokenService implements ITokenService {
   //B2B toker
   signAccessToken(payload: TokenPayload): string {
     return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
-      expiresIn: env.JWT_PORTAL_ACCESS_EXPIRES as any,
+      expiresIn: env.JWT_ACCESS_EXPIRES as any,
     });
   }
   signRefreshToken(userId: string): string {

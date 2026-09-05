@@ -12,10 +12,42 @@ export interface CreateUserData {
   role: UserRole;
 }
 
+export interface CreateBankProfileData {
+  name: string;
+  type: "BANK" | "NBFC" | "HFC";
+  contactEmail: string;
+  contactPhone?: string;
+  gstin?: string;
+  licenceNumber?: string;
+  websiteUrl?: string;
+}
+
+export interface CreateCompanyDsaProfileData {
+  companyName: string;
+  companyCode: string;
+  gstin?: string;
+}
+
+export interface CreateFieldAgentProfileData {
+  companyCode: string;
+  fullName: string;
+  phone: string;
+  bankAccountNumber?: string;
+  ifscCode?: string;
+  pan?: string;
+}
+
+export interface CreateUserWithProfileData extends CreateUserData {
+  bank?: CreateBankProfileData;
+  companyDsa?: CreateCompanyDsaProfileData;
+  fieldAgent?: CreateFieldAgentProfileData;
+}
+
 export interface IUserRepository {
   findByEmail(email: string): Promise<User | null>;
   findById(id: string): Promise<User | null>;
   create(data: CreateUserData): Promise<User>;
+  createWithProfile(data: CreateUserWithProfileData): Promise<User>;
   updateEmailVerified(userId: string): Promise<void>;
 
   // Refresh tokens
@@ -44,8 +76,12 @@ export interface IUserRepository {
     token: string,
     expiresAt: Date,
   ): Promise<EmailVerificationToken>;
+  /**
+   * Returns the token record WITH the related User so the use case
+   * can check user.emailVerified without a separate query.
+   */
   findEmailVerificationToken(
     token: string,
-  ): Promise<EmailVerificationToken | null>;
+  ): Promise<(EmailVerificationToken & { user: User | null }) | null>;
   deleteEmailVerificationToken(tokenId: string): Promise<void>;
 }

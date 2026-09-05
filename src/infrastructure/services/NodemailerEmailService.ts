@@ -1,6 +1,6 @@
 import { IEmailService } from "@/application/interfaces/IEmailService";
+import { env } from "@/config/env";
 import { logger } from "@/config/logger";
-import { env } from "node:process";
 import nodemailer from "nodemailer";
 
 export class NodemailerEmailService implements IEmailService {
@@ -34,7 +34,7 @@ export class NodemailerEmailService implements IEmailService {
     token: string,
     name = "there",
   ): Promise<void> {
-    const url = `${env.FRONTEND_URL}/auth/verify-email/${token}`;
+    const url = `${env.FRONTEND_URL}/auth/email-verified?token=${encodeURIComponent(token)}`;
     await this.send(
       to,
       "Verify your LoanLens account",
@@ -50,12 +50,53 @@ export class NodemailerEmailService implements IEmailService {
     );
   }
 
+  async sendPortalVerificationEmail(
+    to: string,
+    token: string,
+    name = "there",
+  ): Promise<void> {
+    const url = `${env.FRONTEND_URL}/portal/email-verified?token=${encodeURIComponent(token)}`;
+    await this.send(
+      to,
+      "Verify your LoanLens portal account",
+      `
+      <h2>Hi ${name},</h2>
+      <p>Please verify your email address by clicking the link below:</p>
+      <a href="${url}" style="background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin:16px 0">
+        Verify Email
+      </a>
+      <p>This link expires in 24 hours.</p>
+      <p>If you didn't create a LoanLens portal account, ignore this email.</p>
+      `,
+    );
+  }
+
   async sendPasswordResetEmail(
     to: string,
     token: string,
     name = "there",
   ): Promise<void> {
-    const url = `${env.FRONTEND_URL}/auth/reset-password/${token}`;
+    const url = `${env.FRONTEND_URL}/reset-password?token=${encodeURIComponent(token)}`;
+    await this.send(
+      to,
+      "Reset your LoanLens password",
+      `
+      <h2>Hi ${name},</h2>
+      <p>We received a request to reset your password. Click below to set a new password:</p>
+      <a href="${url}" style="background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin:16px 0">
+        Reset Password
+      </a>
+      <p>This link expires in 1 hour.</p>
+      <p>If you didn't request a password reset, ignore this email.</p>
+      `,
+    );
+  }
+  async sendPortalPasswordResetEmail(
+    to: string,
+    token: string,
+    name = "there",
+  ): Promise<void> {
+    const url = `${env.FRONTEND_URL}/portal/reset-password?token=${encodeURIComponent(token)}`;
     await this.send(
       to,
       "Reset your LoanLens password",

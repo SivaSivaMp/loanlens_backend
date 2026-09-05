@@ -7,6 +7,7 @@ import {
 import { RefreshTokenUseCase } from "@/application/use-cases/auth/RefreshTokenUseCase";
 import { RegisterUserUseCase } from "@/application/use-cases/auth/RegisterUserUseCase";
 import { VerifyEmailUseCase } from "@/application/use-cases/auth/VerifyEmailUseCase";
+import { ResendVerificationUseCase } from "@/application/use-cases/auth/ResendVerificationUseCase";
 import { asyncHandler } from "../utils/asyncHandler";
 import { successResponse } from "../utils/response";
 
@@ -18,12 +19,14 @@ export class AuthController {
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
     private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
+    private readonly resendVerificationUseCase: ResendVerificationUseCase,
   ) {}
 
   register = asyncHandler(async (req: Request, res: Response) => {
     const result = await this.registerUseCase.execute(req.body);
     return successResponse(res, result, result.message, 201);
   });
+
   login = asyncHandler(async (req: Request, res: Response) => {
     const result = await this.loginUseCase.execute(req.body);
     return successResponse(res, result, "Login successful");
@@ -42,9 +45,18 @@ export class AuthController {
   });
 
   verifyEmail = asyncHandler(async (req: Request, res: Response) => {
-    const { token } = req.params;
-    await this.verifyEmailUseCase.execute(token as string);
-    return successResponse(res, null, "Email verified successfully");
+    const token = (req.query.token ?? req.params.token) as string;
+    const result = await this.verifyEmailUseCase.execute(token);
+    return successResponse(res, result, "Email verified successfully");
+  });
+
+  resendVerification = asyncHandler(async (req: Request, res: Response) => {
+    await this.resendVerificationUseCase.execute(req.body);
+    return successResponse(
+      res,
+      null,
+      "If that email needs verification, a new link has been sent.",
+    );
   });
 
   forgotPassword = asyncHandler(async (req: Request, res: Response) => {

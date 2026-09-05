@@ -1,19 +1,21 @@
 import {
-  EmailVerificationToken,
-  PasswordResetToken,
-  RefreshToken,
-  User,
-} from "@/domian/entities/User";
-import {
   CreateUserData,
+  CreateUserWithProfileData,
   IUserRepository,
 } from "@/domian/repositories/IUserRepository";
+import { ResourceNotFoundError } from "@/domian/errors/errors";
 import { PrismaClient } from "@prisma/client";
-import { date } from "zod";
+import {
+  User,
+  RefreshToken,
+  PasswordResetToken,
+  EmailVerificationToken,
+} from "@/domian/entities/User";
 
 export class PrismaUserRepository implements IUserRepository {
   constructor(private readonly db: PrismaClient) {}
-  //user
+
+  //  User
 
   async findByEmail(email: string): Promise<User | null> {
     const user = await this.db.user.findUnique({ where: { email } });
@@ -29,21 +31,87 @@ export class PrismaUserRepository implements IUserRepository {
     const user = await this.db.user.create({ data });
     return this.mapUser(user);
   }
+
+  async createWithProfile(data: CreateUserWithProfileData): Promise<User> {
+    const user = await this.db.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          email: data.email,
+          passwordHash: data.passwordHash,
+          role: data.role,
+        },
+      });
+
+      if (data.role === "BANK_ADMIN" && data.bank) {
+        await tx.bank.create({
+          data: {
+            userId: createdUser.id,
+            name: data.bank.name,
+            type: data.bank.type,
+            contactEmail: data.bank.contactEmail,
+            contactPhone: data.bank.contactPhone,
+            gstin: data.bank.gstin,
+            licenceNumber: data.bank.licenceNumber,
+            websiteUrl: data.bank.websiteUrl,
+          },
+        });
+      }
+
+      if (data.role === "COMPANY_DSA" && data.companyDsa) {
+        await tx.companyDSA.create({
+          data: {
+            userId: createdUser.id,
+            companyName: data.companyDsa.companyName,
+            companyCode: data.companyDsa.companyCode,
+            gstin: data.companyDsa.gstin,
+          },
+        });
+      }
+
+      if (data.role === "FIELD_AGENT" && data.fieldAgent) {
+        const company = await tx.companyDSA.findUnique({
+          where: { companyCode: data.fieldAgent.companyCode },
+          select: { id: true },
+        });
+
+        if (!company) {
+          throw new ResourceNotFoundError("Company DSA");
+        }
+
+        await tx.fieldAgentDSA.create({
+          data: {
+            userId: createdUser.id,
+            companyDsaId: company.id,
+            fullName: data.fieldAgent.fullName,
+            phone: data.fieldAgent.phone,
+            bankAccountNumber: data.fieldAgent.bankAccountNumber,
+            ifscCode: data.fieldAgent.ifscCode,
+            pan: data.fieldAgent.pan,
+          },
+        });
+      }
+
+      return createdUser;
+    });
+
+    return this.mapUser(user);
+  }
+
   async updateEmailVerified(userId: string): Promise<void> {
     await this.db.user.update({
-      where: { userId },
+      where: { id: userId },
       data: { emailVerified: true },
     });
   }
 
-  //refresh token
+  // ─── Refresh Tokens ───────────────────────────────────────────────────────
 
   async createRefreshToken(
     userId: string,
     token: string,
     expiresAt: Date,
   ): Promise<RefreshToken> {
-    const rt = this.db.refreshToken.create({
+    const rt = await this.db.refreshToken.create({
       data: { userId, token, expiresAt },
     });
     return this.mapRefreshToken(rt);
@@ -60,6 +128,7 @@ export class PrismaUserRepository implements IUserRepository {
       data: { revokedAt: new Date() },
     });
   }
+
   async revokeAllUserRefreshTokens(userId: string): Promise<void> {
     await this.db.refreshToken.updateMany({
       where: { userId, revokedAt: null },
@@ -67,7 +136,7 @@ export class PrismaUserRepository implements IUserRepository {
     });
   }
 
-  //passawrord reset tokern
+  //  Password Reset Tokens
 
   async createPasswordResetToken(
     userId: string,
@@ -79,6 +148,7 @@ export class PrismaUserRepository implements IUserRepository {
     });
     return this.mapPasswordResetToken(prt);
   }
+
   async findPasswordResetToken(
     token: string,
   ): Promise<PasswordResetToken | null> {
@@ -87,6 +157,7 @@ export class PrismaUserRepository implements IUserRepository {
     });
     return prt ? this.mapPasswordResetToken(prt) : null;
   }
+
   async markPasswordResetTokenUsed(tokenId: string): Promise<void> {
     await this.db.passwordResetToken.update({
       where: { id: tokenId },
@@ -101,14 +172,14 @@ export class PrismaUserRepository implements IUserRepository {
     });
   }
 
-  //email verification token
+  //  Email Verification Tokens
 
   async createEmailVerificationToken(
     userId: string,
     token: string,
     expiresAt: Date,
   ): Promise<EmailVerificationToken> {
-    // Delete any existing token for this user before creating new one
+    // Delete any existing token for this user before creating a new one
     await this.db.emailVerificationToken.deleteMany({ where: { userId } });
     const evt = await this.db.emailVerificationToken.create({
       data: { userId, token, expiresAt },
@@ -118,11 +189,16 @@ export class PrismaUserRepository implements IUserRepository {
 
   async findEmailVerificationToken(
     token: string,
-  ): Promise<EmailVerificationToken | null> {
+  ): Promise<(EmailVerificationToken & { user: User | null }) | null> {
     const evt = await this.db.emailVerificationToken.findUnique({
       where: { token },
+      include: { user: true },
     });
-    return evt ? this.mapEmailVerificationToken(evt) : null;
+    if (!evt) return null;
+    return {
+      ...this.mapEmailVerificationToken(evt),
+      user: evt.user ? this.mapUser(evt.user) : null,
+    };
   }
 
   async deleteEmailVerificationToken(tokenId: string): Promise<void> {
@@ -141,6 +217,7 @@ export class PrismaUserRepository implements IUserRepository {
       updatedAt: p.updatedAt,
     };
   }
+
   private mapRefreshToken(p: any): RefreshToken {
     return {
       id: p.id,
@@ -151,6 +228,7 @@ export class PrismaUserRepository implements IUserRepository {
       createdAt: p.createdAt,
     };
   }
+
   private mapPasswordResetToken(p: any): PasswordResetToken {
     return {
       id: p.id,
@@ -161,6 +239,7 @@ export class PrismaUserRepository implements IUserRepository {
       createdAt: p.createdAt,
     };
   }
+
   private mapEmailVerificationToken(p: any): EmailVerificationToken {
     return {
       id: p.id,

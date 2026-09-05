@@ -2,13 +2,6 @@ import { DomainError } from "@/domian/errors/DomainError";
 import { Request, Response, NextFunction } from "express";
 import { ZodObject, ZodRawShape, ZodError } from "zod";
 
-/**
- * validate — Zod validation middleware factory.
- * Validates req.body, req.query, and req.params against a Zod schema.
- * Throws a VALIDATION_ERROR DomainError with all field errors if validation fails.
- *
- * Usage: router.post('/register', validate(RegisterUserSchema), controller.register)
- */
 export function validate(schema: ZodObject<ZodRawShape>) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const result = schema.safeParse({

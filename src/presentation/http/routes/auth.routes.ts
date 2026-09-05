@@ -5,6 +5,9 @@ import {
   LoginUserSchema,
   RefreshTokenSchema,
   RegisterUserSchema,
+  ResetPasswordSchema,
+  VerifyEmailSchema,
+  ResendVerificationSchema,
 } from "@/application/dtos/auth/auth.dto";
 import { authController } from "@/container";
 import { authRateLimit } from "../middleware/rateLimit";
@@ -24,12 +27,29 @@ router.post(
 router.post("/refresh", validate(RefreshTokenSchema), authController.refresh);
 
 router.post("/logout", authenticate, authController.logout);
-router.get("/verify-email/:token", authController.verifyEmail);
+
+// Verify email via link: GET /api/v1/auth/verify-email?token=<token>
+router.get("/verify-email", validate(VerifyEmailSchema), authController.verifyEmail);
+
+// Resend B2B verification email: POST /api/v1/auth/resend-verification
+router.post(
+  "/resend-verification",
+  authRateLimit,
+  validate(ResendVerificationSchema),
+  authController.resendVerification,
+);
+
 router.post(
   "/forgot-password",
   authRateLimit,
   validate(ForgotPasswordSchema),
   authController.forgotPassword,
 );
-router.post("/reset-password");
+router.post(
+  "/reset-password",
+  validate(ResetPasswordSchema),
+  authController.resetPassword,
+);
+
+router.get("/me", authenticate, authController.me);
 export default router;

@@ -31,9 +31,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ────────────────────────────────────────────────────────────
+
 // ENUMS
-// ────────────────────────────────────────────────────────────
+
 
 enum UserRole {
   BANK_ADMIN
@@ -164,9 +164,9 @@ enum PortalNotificationType {
   SYSTEM
 }
 
-// ────────────────────────────────────────────────────────────
+
 // M01 — AUTH (B2B)
-// ────────────────────────────────────────────────────────────
+
 
 model User {
   id            String   @id @default(cuid())
@@ -232,9 +232,9 @@ model EmailVerificationToken {
   @@map("email_verification_tokens")
 }
 
-// ────────────────────────────────────────────────────────────
+
 // M02 — BANK
-// ────────────────────────────────────────────────────────────
+
 
 model Bank {
   id            String   @id @default(cuid())

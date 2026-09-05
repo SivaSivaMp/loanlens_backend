@@ -89,6 +89,54 @@ async function main() {
     },
   });
 
+  const agentUser2 = await prisma.user.upsert({
+    where: { email: "sivamp70@gmail.com" },
+    update: {},
+    create: {
+      email: "sivamp70@gmail.com",
+      passwordHash: await hash("Password@123"),
+      role: "FIELD_AGENT",
+      emailVerified: true,
+      isActive: true,
+    },
+  });
+
+  const agent2 = await prisma.fieldAgentDSA.upsert({
+    where: { userId: agentUser2.id },
+    update: {},
+    create: {
+      userId: agentUser2.id,
+      companyDsaId: dsa.id,
+      fullName: "Meera Nair",
+      phone: "9876543211",
+      isActive: true,
+    },
+  });
+
+  const agentUser3 = await prisma.user.upsert({
+    where: { email: "sivasivamp70@gmail.com" },
+    update: {},
+    create: {
+      email: "sivasivamp70@gmail.com",
+      passwordHash: await hash("Password@123"),
+      role: "FIELD_AGENT",
+      emailVerified: true,
+      isActive: true,
+    },
+  });
+
+  const agent3 = await prisma.fieldAgentDSA.upsert({
+    where: { userId: agentUser2.id },
+    update: {},
+    create: {
+      userId: agentUser2.id,
+      companyDsaId: dsa.id,
+      fullName: "Meera Nair",
+      phone: "9876543211",
+      isActive: true,
+    },
+  });
+
   // ─── 4. Bank-DSA Agreement ────────────────────────────────────────────────
   await prisma.companyBankAgreement.upsert({
     where: { companyDsaId_bankId: { companyDsaId: dsa.id, bankId: bank.id } },
