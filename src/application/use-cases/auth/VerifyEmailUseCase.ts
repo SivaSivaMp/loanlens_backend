@@ -11,7 +11,6 @@ export class VerifyEmailUseCase {
 
     if (!record) throw new InvalidTokenError("Invalid verification link");
 
-    // The record now includes the user relation — check if already verified
     if (record.user?.emailVerified) {
       return { status: "already_verified" };
     }

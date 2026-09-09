@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// ─── Register ─────────────────────────────────────────────────────────────────
+// Register
 
 export const RegisterUserSchema = z.object({
   body: z
@@ -91,7 +91,7 @@ export const RegisterUserSchema = z.object({
 });
 export type RegisterUserDto = z.infer<typeof RegisterUserSchema>["body"];
 
-// ─── Login ────────────────────────────────────────────────────────────────────
+//  Login
 
 export const LoginUserSchema = z.object({
   body: z.object({
@@ -101,7 +101,7 @@ export const LoginUserSchema = z.object({
 });
 export type LoginUserDto = z.infer<typeof LoginUserSchema>["body"];
 
-// ─── Refresh Token ────────────────────────────────────────────────────────────
+//  Refresh Token
 
 export const RefreshTokenSchema = z.object({
   body: z.object({
@@ -110,7 +110,7 @@ export const RefreshTokenSchema = z.object({
 });
 export type RefreshTokenDto = z.infer<typeof RefreshTokenSchema>["body"];
 
-// ─── Forgot Password ──────────────────────────────────────────────────────────
+// Forgot Password
 
 export const ForgotPasswordSchema = z.object({
   body: z.object({
@@ -119,8 +119,7 @@ export const ForgotPasswordSchema = z.object({
 });
 export type ForgotPasswordDto = z.infer<typeof ForgotPasswordSchema>["body"];
 
-// ─── Reset Password ───────────────────────────────────────────────────────────
-
+//  Reset Password
 export const ResetPasswordSchema = z.object({
   body: z.object({
     token: z.string().min(1, "Reset token is required"),
@@ -129,7 +128,7 @@ export const ResetPasswordSchema = z.object({
 });
 export type ResetPasswordDto = z.infer<typeof ResetPasswordSchema>["body"];
 
-// ─── Verify Email ─────────────────────────────────────────────────────────────
+// Verify Email
 
 export const VerifyEmailSchema = z.object({
   query: z.object({
@@ -149,7 +148,7 @@ export type ResendVerificationDto = z.infer<
   typeof ResendVerificationSchema
 >["body"];
 
-// ─── Portal Register ──────────────────────────────────────────────────────────
+// Portal Register
 
 export const RegisterPortalUserSchema = z.object({
   body: z.object({

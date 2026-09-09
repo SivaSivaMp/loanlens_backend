@@ -614,9 +614,9 @@ model BankDisbursementReport {
   @@map("bank_disbursement_reports")
 }
 
-// ────────────────────────────────────────────────────────────
+
 // M10 — NOTIFICATIONS (B2B)
-// ────────────────────────────────────────────────────────────
+
 
 model Notification {
   id        String           @id @default(cuid())
@@ -636,9 +636,9 @@ model Notification {
   @@map("notifications")
 }
 
-// ────────────────────────────────────────────────────────────
+
 // M11 — ANALYTICS
-// ────────────────────────────────────────────────────────────
+
 
 model ProductImpression {
   id           String   @id @default(cuid())
@@ -657,16 +657,17 @@ model ProductImpression {
   @@map("product_impressions")
 }
 
-// ────────────────────────────────────────────────────────────
+
 // M12 — CUSTOMER PORTAL AUTH
-// ────────────────────────────────────────────────────────────
+
 
 model PortalUser {
   id                     String          @id @default(cuid())
   fullName               String
-  phone                  String
+  phone                  String?
   email                  String          @unique
-  passwordHash           String
+  passwordHash           String?
+  googleId               String?         @unique
   isActive               Boolean         @default(true)
   emailVerified          Boolean         @default(false)
   snapshotIncome         Float?
@@ -744,9 +745,9 @@ model PortalNotification {
   @@map("portal_notifications")
 }
 
-// ────────────────────────────────────────────────────────────
+
 // M13 — LEADS & PROPOSALS
-// ────────────────────────────────────────────────────────────
+
 
 model Lead {
   id             String     @id @default(cuid())
@@ -821,9 +822,9 @@ model ProposalProduct {
   @@map("proposal_products")
 }
 
-// ────────────────────────────────────────────────────────────
+
 // M14 — VIDEO CALL SESSIONS
-// ────────────────────────────────────────────────────────────
+
 
 model VideoCallSession {
   id                 String      @id @default(cuid())

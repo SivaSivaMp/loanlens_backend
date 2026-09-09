@@ -34,7 +34,7 @@ async function bootstrap(): Promise<void> {
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
 
-  // ─── Unhandled Rejections ─────────────────────────────────────────────────
+  // Unhandled Rejections
   process.on("unhandledRejection", (reason) => {
     logger.error("Unhandled Promise Rejection:", reason);
   });

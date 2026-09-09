@@ -18,7 +18,7 @@ import {
 import { IPortalUserRepository } from "@/domian/repositories/IPortalUserRepository";
 import crypto from "crypto";
 
-// ─── Register ────────────────────────────────────────────────────────────────
+//  Register
 
 export class RegisterPortalUserUseCase {
   constructor(
@@ -59,7 +59,7 @@ export class RegisterPortalUserUseCase {
   }
 }
 
-// ─── Verify Email ─────────────────────────────────────────────────────────────
+// Verify Email
 
 export class VerifyPortalEmailUseCase {
   constructor(private readonly portalUserRepo: IPortalUserRepository) {}
@@ -83,17 +83,13 @@ export class VerifyPortalEmailUseCase {
 
     await this.portalUserRepo.updateEmailVerified(record.portalUserId);
 
-    // Always delete the token after use so:
-    // 1. Re-clicks return "already_verified" via the portalUser check above
-    // 2. React StrictMode double-invocations hit the token-not-found → InvalidTokenError
-    //    on the second call, which is caught and treated correctly
     await this.portalUserRepo.deleteEmailVerificationToken(record.id);
 
     return { status: "success" };
   }
 }
 
-// ─── Resend Verification ──────────────────────────────────────────────────────
+// Resend Verification
 
 export class ResendPortalVerificationUseCase {
   constructor(
@@ -123,7 +119,7 @@ export class ResendPortalVerificationUseCase {
   }
 }
 
-// ─── Login ───────────────────────────────────────────────────────────────────
+//  Login
 
 export class LoginPortalUserUseCase {
   constructor(
@@ -136,11 +132,18 @@ export class LoginPortalUserUseCase {
     const user = await this.portalUserRepo.findByEmail(dto.email);
     if (!user) throw new InvalidCredentialsError();
 
-    const valid = await this.hashService.compare(dto.password, user.passwordHash);
+    // Google-only users have no password — they must use "Sign in with Google"
+    if (!user.passwordHash) throw new InvalidCredentialsError();
+
+    const valid = await this.hashService.compare(
+      dto.password,
+      user.passwordHash,
+    );
     if (!valid) throw new InvalidCredentialsError();
 
     if (!user.isActive) throw new AccountDisabledError();
     if (!user.emailVerified) throw new EmailNotVerifiedError();
+
 
     const accessToken = this.tokenService.signPortalAccessToken({
       userId: user.id,
@@ -149,7 +152,11 @@ export class LoginPortalUserUseCase {
     const refreshToken = this.tokenService.signPortalRefreshToken(user.id);
 
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await this.portalUserRepo.createRefreshToken(user.id, refreshToken, expiresAt);
+    await this.portalUserRepo.createRefreshToken(
+      user.id,
+      refreshToken,
+      expiresAt,
+    );
 
     return {
       accessToken,
@@ -159,7 +166,7 @@ export class LoginPortalUserUseCase {
   }
 }
 
-// ─── Forgot Password ──────────────────────────────────────────────────────────
+//  Forgot Password
 
 export class ForgotPasswordPortalUseCase {
   constructor(
@@ -179,7 +186,7 @@ export class ForgotPasswordPortalUseCase {
   }
 }
 
-// ─── Reset Password ───────────────────────────────────────────────────────────
+// Reset Password
 
 export class ResetPasswordPortalUseCase {
   constructor(
@@ -202,7 +209,7 @@ export class ResetPasswordPortalUseCase {
 
     await this.userRepo.updatePassword(record.portalUserId, passwordHash);
     await this.userRepo.markPasswordResetTokenUsed(record.id);
-    // Revoke all refresh tokens on password reset (security best practice)
+
     await this.userRepo.revokeAllUserRefreshTokens(record.portalUserId);
   }
 }

@@ -3,9 +3,10 @@ export type EmploymentType = 'SALARIED' | 'SELF_EMPLOYED' | 'BOTH'
 export interface PortalUser {
   id: string
   fullName: string
-  phone: string
+  phone: string | null          // nullable — Google users may not have a phone yet
   email: string
-  passwordHash: string
+  passwordHash: string | null   // nullable — Google OAuth users have no password
+  googleId: string | null       // Google's sub ID; null for email/password users
   isActive: boolean
   emailVerified: boolean
   snapshotIncome: number | null

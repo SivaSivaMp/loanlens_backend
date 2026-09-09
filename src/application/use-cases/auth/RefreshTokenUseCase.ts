@@ -14,7 +14,6 @@ export class RefreshTokenUseCase {
   ) {}
 
   async execute(oldRefreshToken: string): Promise<RefreshResult> {
-    // 1. Verify JWT signature
     let payload: { userId: string };
     try {
       payload = this.tokenService.verifyRefreshToken(oldRefreshToken);
@@ -22,7 +21,6 @@ export class RefreshTokenUseCase {
       throw new InvalidTokenError("Invalid refresh token");
     }
 
-    // 2. Check token exists and is not revoked in DB
     const storedToken = await this.userRepo.findRefreshToken(oldRefreshToken);
     if (
       !storedToken ||
@@ -32,11 +30,9 @@ export class RefreshTokenUseCase {
       throw new InvalidTokenError("Refresh token is invalid or expired");
     }
 
-    // 3. Find the user
     const user = await this.userRepo.findById(payload.userId);
     if (!user) throw new UserNotFoundError();
 
-    // 4. ROTATION: revoke old token, issue new one
     await this.userRepo.revokeRefreshToken(storedToken.id);
 
     const newAccessToken = this.tokenService.signAccessToken({

@@ -39,8 +39,6 @@ export class AuthController {
   });
 
   logout = asyncHandler(async (req: Request, res: Response) => {
-    // Revoke the refresh token on logout — handled in the repository
-    // (The access token expires naturally after 15 min)
     return successResponse(res, null, "Logged out successfully");
   });
 

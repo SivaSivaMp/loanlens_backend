@@ -2,16 +2,20 @@ import { PortalUser, PortalRefreshToken } from "../entities/PortalUser";
 
 export interface CreatePortalUserData {
   fullName: string;
-  phone: string;
+  phone?: string | null;        // nullable for Google OAuth users
   email: string;
-  passwordHash: string;
+  passwordHash?: string | null; // nullable for Google OAuth users
+  googleId?: string | null;     // set when creating via Google OAuth
+  emailVerified?: boolean;      // Google users are pre-verified
 }
 
 export interface IPortalUserRepository {
   findByEmail(email: string): Promise<PortalUser | null>;
   findById(id: string): Promise<PortalUser | null>;
+  findByGoogleId(googleId: string): Promise<PortalUser | null>;
   create(data: CreatePortalUserData): Promise<PortalUser>;
   updateEmailVerified(userId: string): Promise<void>;
+  linkGoogleId(userId: string, googleId: string): Promise<void>;
 
   // Refresh tokens
   createRefreshToken(

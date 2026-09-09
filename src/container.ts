@@ -1,7 +1,3 @@
-/**
- * composition root
- */
-
 import { LoginUserUseCase } from "./application/use-cases/auth/LoginUserUseCase";
 import {
   ForgotPasswordUseCase,
@@ -15,6 +11,8 @@ import {
   ForgotPasswordPortalUseCase,
   ResetPasswordPortalUseCase,
 } from "./application/use-cases/auth/portal/PortalAuthUseCases";
+import { GoogleOAuthUseCase } from "./application/use-cases/auth/portal/GoogleOAuthUseCase";
+import { configureGoogleStrategy } from "./infrastructure/auth/passport";
 import { RefreshTokenUseCase } from "./application/use-cases/auth/RefreshTokenUseCase";
 import { RegisterUserUseCase } from "./application/use-cases/auth/RegisterUserUseCase";
 import { VerifyEmailUseCase } from "./application/use-cases/auth/VerifyEmailUseCase";
@@ -28,18 +26,19 @@ import { NodemailerEmailService } from "./infrastructure/services/NodemailerEmai
 import { AuthController } from "./presentation/http/controllers/AuthController";
 import { PortalAuthController } from "./presentation/http/controllers/PortalAuthController";
 
-// ─── Repositories ────────────────────────────────────────────────────────────
+
+//  Repositories
 
 const userRepository = new PrismaUserRepository(prisma);
 const portalUserRepository = new PrismaPortalUserRepository(prisma);
 
-// ─── Services ────────────────────────────────────────────────────────────────
+// Services
 
 const tokenService = new JwtTokenService();
 const hashService = new BcryptHashService();
 const emailService = new NodemailerEmailService();
 
-// ─── B2B Auth Use Cases ──────────────────────────────────────────────────────
+// B2B Auth Use Cases
 
 const registerUserUseCase = new RegisterUserUseCase(
   userRepository,
@@ -69,7 +68,7 @@ const resetPasswordUseCase = new ResetPasswordUseCase(
   hashService,
 );
 
-// ─── Portal Auth Use Cases ───────────────────────────────────────────────────
+// Portal Auth Use Cases
 
 const registerPortalUserUseCase = new RegisterPortalUserUseCase(
   portalUserRepository,
@@ -97,7 +96,15 @@ const resetPasswordPortalUseCase = new ResetPasswordPortalUseCase(
   hashService,
 );
 
-// ─── Controllers ─────────────────────────────────────────────────────────────
+const googleOAuthUseCase = new GoogleOAuthUseCase(
+  portalUserRepository,
+  tokenService,
+);
+
+// Register Passport Google strategy (no-op if env vars not set)
+configureGoogleStrategy(googleOAuthUseCase);
+
+//  Controllers
 
 export const authController = new AuthController(
   registerUserUseCase,
@@ -116,4 +123,6 @@ export const portalAuthController = new PortalAuthController(
   resendPortalVerificationUseCase,
   forgotPasswordPortalUseCase,
   resetPasswordPortalUseCase,
+  googleOAuthUseCase,
 );
+

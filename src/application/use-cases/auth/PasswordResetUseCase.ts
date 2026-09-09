@@ -48,7 +48,7 @@ export class ResetPasswordUseCase {
 
     await this.userRepo.updatePassword(record.userId, passwordHash);
     await this.userRepo.markPasswordResetTokenUsed(record.id);
-    // Revoke all refresh tokens on password reset (security best practice)
+
     await this.userRepo.revokeAllUserRefreshTokens(record.userId);
   }
 }

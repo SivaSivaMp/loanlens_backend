@@ -1,4 +1,5 @@
 import { Router } from "express";
+import passport from "passport";
 import { validate } from "../middleware/validate";
 import {
   LoginUserSchema,
@@ -11,6 +12,7 @@ import {
 import { authRateLimit } from "../middleware/rateLimit";
 import { authenticatePortal } from "../middleware/authenticate";
 import { portalAuthController } from "@/container";
+import { env } from "@/config/env";
 
 const router = Router();
 
@@ -58,6 +60,27 @@ router.post(
   "/reset-password",
   validate(ResetPasswordSchema),
   portalAuthController.resetPassword,
+);
+
+// ─── Google OAuth ─────────────────────────────────────────────────────────────
+
+// GET /api/v1/portal/auth/google  — initiate OAuth consent screen
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+  }),
+);
+
+// GET /api/v1/portal/auth/google/callback  — Google redirects here after approval
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: `${env.FRONTEND_URL}/portal/login?error=oauth_failed`,
+  }),
+  portalAuthController.googleCallback,
 );
 
 export default router;

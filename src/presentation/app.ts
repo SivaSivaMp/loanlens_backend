@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import passport from "passport";
 import { env } from "@/config/env";
 import { errorMiddleware } from "./http/middleware/error";
 import { logger } from "@/config/logger";
@@ -9,8 +10,9 @@ import authRoutes from "./http/routes/auth.routes";
 import portalAuthRoutes from "./http/routes/portal.auth.routes";
 const app = express();
 
-//securitiy
+//security
 app.use(helmet());
+
 app.use(
   cors({
     origin: env.FRONTEND_URL,
@@ -21,9 +23,11 @@ app.use(
 );
 
 //body parsing
-
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+
+// Passport (session: false — we use JWT, not sessions)
+app.use(passport.initialize());
 
 //request logging
 
@@ -41,7 +45,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/portal/auth", portalAuthRoutes);
 
-// ─── 404 Handler ──────────────────────────────────────────────────────────────
+//  404 Handler
 app.use((_req, res) => {
   res.status(404).json({
     success: false,
@@ -49,7 +53,7 @@ app.use((_req, res) => {
   });
 });
 
-// ─── Global Error Handler (MUST be last) ──────────────────────────────────────
+//  Global Error Handler
 app.use(errorMiddleware);
 
 export default app;

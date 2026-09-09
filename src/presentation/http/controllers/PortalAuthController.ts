@@ -6,6 +6,8 @@ import {
   ForgotPasswordPortalUseCase,
   ResetPasswordPortalUseCase,
 } from "@/application/use-cases/auth/portal/PortalAuthUseCases";
+import { GoogleOAuthUseCase } from "@/application/use-cases/auth/portal/GoogleOAuthUseCase";
+import { env } from "@/config/env";
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { successResponse } from "../utils/response";
@@ -18,6 +20,7 @@ export class PortalAuthController {
     private readonly resendVerificationUseCase: ResendPortalVerificationUseCase,
     private readonly forgotPasswordUseCase: ForgotPasswordPortalUseCase,
     private readonly resetPasswordUseCase: ResetPasswordPortalUseCase,
+    private readonly googleOAuthUseCase: GoogleOAuthUseCase,
   ) {}
 
   register = asyncHandler(async (req: Request, res: Response) => {
@@ -57,12 +60,38 @@ export class PortalAuthController {
       "If that email is registered, you will receive a reset link shortly.",
     );
   });
+
   resetPassword = asyncHandler(async (req: Request, res: Response) => {
     await this.resetPasswordUseCase.execute(req.body);
-    return successResponse(
-      res,
-      null,
-      "Password reset successful. Please log in.",
-    );
+    return successResponse(res, null, "Password reset successful. Please log in.");
   });
+
+  /**
+   * Called after passport.authenticate("google") succeeds.
+   * req.user is set by the Passport strategy to the GoogleOAuthUseCase result:
+   * { accessToken, refreshToken, user }
+   *
+   * We redirect to the frontend callback page with tokens in the URL fragment
+   * (hash). Fragments are never sent to the server so tokens stay browser-only.
+   */
+  googleCallback = (req: Request, res: Response) => {
+    const result = req.user as {
+      accessToken: string;
+      refreshToken: string;
+      user: { id: string; email: string; fullName: string };
+    };
+
+    const params = new URLSearchParams({
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      userId: result.user.id,
+      email: result.user.email,
+      fullName: result.user.fullName,
+    });
+
+    // Redirect to frontend callback page — tokens in query string are read
+    // by OAuthCallbackPage and then immediately replaced with the store state.
+    // Using hash (#) keeps tokens out of server logs entirely.
+    res.redirect(`${env.FRONTEND_URL}/portal/oauth-callback#${params.toString()}`);
+  };
 }
