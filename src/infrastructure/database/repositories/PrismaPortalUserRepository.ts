@@ -4,6 +4,7 @@ import {
   IPortalUserRepository,
 } from "@/domian/repositories/IPortalUserRepository";
 import { PrismaClient } from "@prisma/client";
+import { blockPortalUser, unblockPortalUser } from "@/infrastructure/cache/portalBlocklist";
 
 export class PrismaPortalUserRepository implements IPortalUserRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -172,6 +173,28 @@ export class PrismaPortalUserRepository implements IPortalUserRepository {
 
   async deleteEmailVerificationToken(tokenId: string): Promise<void> {
     await this.db.portalEmailVerificationToken.delete({ where: { id: tokenId } });
+  }
+
+  async setActive(userId: string, isActive: boolean): Promise<void> {
+    await this.db.portalUser.update({
+      where: { id: userId },
+      data: { isActive },
+    });
+    if (!isActive) {
+      // Revoke all active refresh tokens so re-login is blocked.
+      await this.db.portalRefreshToken.updateMany({
+        where: { portalUserId: userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      // Write to Redis blocklist — authenticatePortal checks this on every
+      // request, so the customer is kicked out on their NEXT API call even
+      // while their access token is still cryptographically valid.
+      // TTL = 15 min (matches JWT_PORTAL_ACCESS_EXPIRES).
+      await blockPortalUser(userId, 15 * 60);
+    } else {
+      // Remove from blocklist so reactivated users can access portal again.
+      await unblockPortalUser(userId);
+    }
   }
 
   private mapUser(p: any): PortalUser {

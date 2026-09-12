@@ -6,6 +6,7 @@ import {
 import { env } from "@/config/env";
 import { InvalidTokenError } from "@/domian/errors/errors";
 import jwt from "jsonwebtoken";
+import { randomUUID } from "crypto";
 
 export class JwtTokenService implements ITokenService {
   //B2B toker
@@ -15,7 +16,9 @@ export class JwtTokenService implements ITokenService {
     });
   }
   signRefreshToken(userId: string): string {
-    return jwt.sign({ userId }, env.JWT_REFRESH_SECRET, {
+    // jti (JWT ID) makes every token unique even at the same second —
+    // prevents unique-constraint collisions on concurrent refresh calls.
+    return jwt.sign({ userId, jti: randomUUID() }, env.JWT_REFRESH_SECRET, {
       expiresIn: env.JWT_REFRESH_EXPIRES as any,
     });
   }
@@ -43,9 +46,11 @@ export class JwtTokenService implements ITokenService {
   }
 
   signPortalRefreshToken(userId: string): string {
-    return jwt.sign({ userId, type: "portal" }, env.JWT_PORTAL_REFRESH_SECRET, {
-      expiresIn: env.JWT_PORTAL_REFRESH_EXPIRES as any,
-    });
+    return jwt.sign(
+      { userId, type: "portal", jti: randomUUID() },
+      env.JWT_PORTAL_REFRESH_SECRET,
+      { expiresIn: env.JWT_PORTAL_REFRESH_EXPIRES as any },
+    );
   }
   verifyPortalAccessToken(token: string): PortalTokenPayload {
     try {

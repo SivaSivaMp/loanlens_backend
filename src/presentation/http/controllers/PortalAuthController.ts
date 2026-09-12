@@ -63,17 +63,13 @@ export class PortalAuthController {
 
   resetPassword = asyncHandler(async (req: Request, res: Response) => {
     await this.resetPasswordUseCase.execute(req.body);
-    return successResponse(res, null, "Password reset successful. Please log in.");
+    return successResponse(
+      res,
+      null,
+      "Password reset successful. Please log in.",
+    );
   });
 
-  /**
-   * Called after passport.authenticate("google") succeeds.
-   * req.user is set by the Passport strategy to the GoogleOAuthUseCase result:
-   * { accessToken, refreshToken, user }
-   *
-   * We redirect to the frontend callback page with tokens in the URL fragment
-   * (hash). Fragments are never sent to the server so tokens stay browser-only.
-   */
   googleCallback = (req: Request, res: Response) => {
     const result = req.user as {
       accessToken: string;
@@ -92,6 +88,8 @@ export class PortalAuthController {
     // Redirect to frontend callback page — tokens in query string are read
     // by OAuthCallbackPage and then immediately replaced with the store state.
     // Using hash (#) keeps tokens out of server logs entirely.
-    res.redirect(`${env.FRONTEND_URL}/portal/oauth-callback#${params.toString()}`);
+    res.redirect(
+      `${env.FRONTEND_URL}/portal/oauth-callback#${params.toString()}`,
+    );
   };
 }

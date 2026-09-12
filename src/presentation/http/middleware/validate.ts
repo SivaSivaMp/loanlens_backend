@@ -27,6 +27,14 @@ export function validate(schema: ZodObject<ZodRawShape>) {
       return;
     }
 
+    // Mutate existing objects in-place — req.query and req.params are read-only
+    // getters on IncomingMessage so they cannot be reassigned directly.
+    if (result.data.body !== undefined) req.body = result.data.body;
+    if (result.data.query !== undefined)
+      Object.assign(req.query, result.data.query);
+    if (result.data.params !== undefined)
+      Object.assign(req.params, result.data.params);
+
     next();
   };
 }

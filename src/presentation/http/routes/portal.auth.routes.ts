@@ -62,9 +62,9 @@ router.post(
   portalAuthController.resetPassword,
 );
 
-// ─── Google OAuth ─────────────────────────────────────────────────────────────
+//  Google OAuth
 
-// GET /api/v1/portal/auth/google  — initiate OAuth consent screen
+// GET /api/v1/portal/auth/google
 router.get(
   "/google",
   passport.authenticate("google", {
@@ -73,7 +73,7 @@ router.get(
   }),
 );
 
-// GET /api/v1/portal/auth/google/callback  — Google redirects here after approval
+// GET /api/v1/portal/auth/google/callback
 router.get(
   "/google/callback",
   passport.authenticate("google", {

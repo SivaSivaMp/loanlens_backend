@@ -69,3 +69,45 @@ export class ForbiddenError extends DomainError {
     super(detail, "FORBIDDEN", 403);
   }
 }
+
+//company dsa errors
+
+export class CompanyNotFoundError extends DomainError {
+  constructor() {
+    super("Company profile not found", "COMPANY_NOT_FOUND", 404);
+  }
+}
+
+//Field agent Errors
+
+export class AgentNotFoundError extends DomainError {
+  constructor() {
+    super("Agent not found", "AGENT_NOT_FOUND", 404);
+  }
+}
+
+export class AgentNotInCompanyError extends DomainError {
+  constructor() {
+    super("Agent does not belong to your company", "AGENT_NOT_IN_COMPANY", 403);
+  }
+}
+
+export class AgentAlreadyInactiveError extends DomainError {
+  constructor() {
+    super("Agent is already deactivated", "AGENT_ALREADY_INACTIVE", 409);
+  }
+}
+
+//Lead errors
+
+export class LeadNotFoundError extends DomainError {
+  constructor() {
+    super("Lead not found", "LEAD_NOT_FOUND", 404);
+  }
+}
+
+export class PortalUserNotFoundError extends DomainError {
+  constructor() {
+    super("Portal user not found", "PORTAL_USER_NOT_FOUND", 404);
+  }
+}

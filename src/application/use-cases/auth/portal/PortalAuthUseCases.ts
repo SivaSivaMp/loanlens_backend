@@ -16,6 +16,7 @@ import {
   InvalidTokenError,
 } from "@/domian/errors/errors";
 import { IPortalUserRepository } from "@/domian/repositories/IPortalUserRepository";
+import { PrismaClient } from "@prisma/client";
 import crypto from "crypto";
 
 //  Register
@@ -25,6 +26,7 @@ export class RegisterPortalUserUseCase {
     private readonly portalUserRepo: IPortalUserRepository,
     private readonly hashService: IHashService,
     private readonly emailService: IEmailService,
+    private readonly db: PrismaClient,
   ) {}
 
   async execute(dto: RegisterPortalUserDto) {
@@ -51,6 +53,30 @@ export class RegisterPortalUserUseCase {
     this.emailService
       .sendPortalVerificationEmail(user.email, verifyToken, user.fullName)
       .catch(() => {});
+
+    // Auto-create a PENDING lead for every active CompanyDSA so the
+    // new portal customer is immediately visible in each DSA's lead list.
+    this.db.companyDSA
+      .findMany({ where: { isActive: true }, select: { id: true } })
+      .then((companies) => {
+        if (companies.length === 0) return;
+        return this.db.lead.createMany({
+          data: companies.map((c) => ({
+            portalUserId:   user.id,
+            companyDsaId:   c.id,
+            loanType:       "HOME" as const,
+            requiredAmount: 0,
+            monthlyIncome:  0,
+            cibilScore:     0,
+            employmentType: "SALARIED" as const,
+            existingEmi:    0,
+            status:         "PENDING" as const,
+            customerNote:   "Auto-created on portal registration — details pending.",
+          })),
+          skipDuplicates: true,
+        });
+      })
+      .catch(() => {}); // non-blocking; registration still succeeds if this fails
 
     return {
       userId: user.id,

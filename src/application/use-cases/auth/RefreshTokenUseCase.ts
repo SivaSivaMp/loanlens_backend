@@ -39,10 +39,24 @@ export class RefreshTokenUseCase {
       userId: user.id,
       role: user.role,
     });
-    const newRefreshToken = this.tokenService.signRefreshToken(user.id);
 
+    // Generate a new refresh token and persist it.
+    // Each call to signRefreshToken now embeds a random jti so tokens are
+    // always unique even when two requests race at the same millisecond.
+    // The try-catch below is a last-resort guard for any residual collision.
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await this.userRepo.createRefreshToken(user.id, newRefreshToken, expiresAt);
+    let newRefreshToken = this.tokenService.signRefreshToken(user.id);
+    try {
+      await this.userRepo.createRefreshToken(user.id, newRefreshToken, expiresAt);
+    } catch (err: any) {
+      if (err?.code === "P2002") {
+        // Unique constraint violation — extremely rare with jti, but retry once
+        newRefreshToken = this.tokenService.signRefreshToken(user.id);
+        await this.userRepo.createRefreshToken(user.id, newRefreshToken, expiresAt);
+      } else {
+        throw err;
+      }
+    }
 
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }

@@ -2,11 +2,11 @@ import { PortalUser, PortalRefreshToken } from "../entities/PortalUser";
 
 export interface CreatePortalUserData {
   fullName: string;
-  phone?: string | null;        // nullable for Google OAuth users
+  phone?: string | null;
   email: string;
-  passwordHash?: string | null; // nullable for Google OAuth users
-  googleId?: string | null;     // set when creating via Google OAuth
-  emailVerified?: boolean;      // Google users are pre-verified
+  passwordHash?: string | null;
+  googleId?: string | null;
+  emailVerified?: boolean;
 }
 
 export interface IPortalUserRepository {
@@ -33,9 +33,7 @@ export interface IPortalUserRepository {
     token: string,
     expiresAt: Date,
   ): Promise<void>;
-  findPasswordResetToken(
-    token: string,
-  ): Promise<{
+  findPasswordResetToken(token: string): Promise<{
     id: string;
     portalUserId: string;
     expiresAt: Date;
@@ -50,13 +48,14 @@ export interface IPortalUserRepository {
     token: string,
     expiresAt: Date,
   ): Promise<void>;
-  findEmailVerificationToken(
-    token: string,
-  ): Promise<{
+  findEmailVerificationToken(token: string): Promise<{
     id: string;
     portalUserId: string;
     expiresAt: Date;
     portalUser?: { emailVerified: boolean };
   } | null>;
   deleteEmailVerificationToken(tokenId: string): Promise<void>;
+
+  // Account status
+  setActive(userId: string, isActive: boolean): Promise<void>;
 }

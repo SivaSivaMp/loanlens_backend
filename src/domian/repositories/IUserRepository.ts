@@ -76,10 +76,7 @@ export interface IUserRepository {
     token: string,
     expiresAt: Date,
   ): Promise<EmailVerificationToken>;
-  /**
-   * Returns the token record WITH the related User so the use case
-   * can check user.emailVerified without a separate query.
-   */
+
   findEmailVerificationToken(
     token: string,
   ): Promise<(EmailVerificationToken & { user: User | null }) | null>;

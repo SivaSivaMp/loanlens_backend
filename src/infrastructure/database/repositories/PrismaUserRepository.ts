@@ -104,7 +104,7 @@ export class PrismaUserRepository implements IUserRepository {
     });
   }
 
-  // ─── Refresh Tokens ───────────────────────────────────────────────────────
+  //  Refresh Tokens
 
   async createRefreshToken(
     userId: string,
