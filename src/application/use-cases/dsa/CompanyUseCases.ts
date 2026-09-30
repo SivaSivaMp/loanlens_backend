@@ -1,3 +1,5 @@
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
 import {
   AgentListQueryDto,
   UpdateCompanyProfileDto,
@@ -7,13 +9,17 @@ import {
   AgentNotFoundError,
   AgentNotInCompanyError,
   CompanyNotFoundError,
-} from "@/domian/errors/errors";
-import { ICompanyDSARepository } from "@/domian/repositories/ICompanyDSARepository";
-import { IFieldAgentRepository } from "@/domian/repositories/IFieldAgentRepository";
+} from "@/domain/errors/errors";
+import { FieldAgentDomain } from "@/domain/entities/FieldAgent";
+import { ICompanyDSARepository } from "@/domain/repositories/ICompanyDSARepository";
+import { IFieldAgentRepository } from "@/domain/repositories/IFieldAgentRepository";
 
 //get company profile
+@injectable()
 export class GetCompanyProfileUseCase {
-  constructor(private readonly companyRepo: ICompanyDSARepository) {}
+  constructor(
+    @inject(TOKENS.ICompanyDSARepository) private readonly companyRepo: ICompanyDSARepository,
+  ) {}
 
   async execute(userId: string) {
     const company = await this.companyRepo.getWithTeamSummary(userId);
@@ -23,8 +29,11 @@ export class GetCompanyProfileUseCase {
 }
 
 //update company profile
+@injectable()
 export class UpdateCompanyProfileUseCase {
-  constructor(private readonly companyRepo: ICompanyDSARepository) {}
+  constructor(
+    @inject(TOKENS.ICompanyDSARepository) private readonly companyRepo: ICompanyDSARepository,
+  ) {}
   async execute(userId: string, dto: UpdateCompanyProfileDto) {
     const company = await this.companyRepo.findByUserId(userId);
     if (!company) throw new CompanyNotFoundError();
@@ -34,10 +43,11 @@ export class UpdateCompanyProfileUseCase {
 
 //List field agent
 
+@injectable()
 export class ListAgentsUseCase {
   constructor(
-    private readonly companyRepo: ICompanyDSARepository,
-    private readonly agentRepo: IFieldAgentRepository,
+    @inject(TOKENS.ICompanyDSARepository) private readonly companyRepo: ICompanyDSARepository,
+    @inject(TOKENS.IFieldAgentRepository) private readonly agentRepo: IFieldAgentRepository,
   ) {}
   async execute(userId: string, query: AgentListQueryDto) {
     const company = await this.companyRepo.findByUserId(userId);
@@ -52,10 +62,11 @@ export class ListAgentsUseCase {
 }
 //get agent details
 
+@injectable()
 export class GetAgentDetailUseCase {
   constructor(
-    private readonly companyRepo: ICompanyDSARepository,
-    private readonly agentRepo: IFieldAgentRepository,
+    @inject(TOKENS.ICompanyDSARepository) private readonly companyRepo: ICompanyDSARepository,
+    @inject(TOKENS.IFieldAgentRepository) private readonly agentRepo: IFieldAgentRepository,
   ) {}
   async execute(userId: string, agentId: string) {
     const company = await this.companyRepo.findByUserId(userId);
@@ -69,10 +80,11 @@ export class GetAgentDetailUseCase {
 
 //Deactivate Agent
 
+@injectable()
 export class DeactivateAgentUseCase {
   constructor(
-    private readonly companyRepo: ICompanyDSARepository,
-    private readonly agentRepo: IFieldAgentRepository,
+    @inject(TOKENS.ICompanyDSARepository) private readonly companyRepo: ICompanyDSARepository,
+    @inject(TOKENS.IFieldAgentRepository) private readonly agentRepo: IFieldAgentRepository,
   ) {}
 
   async execute(userId: string, agentId: string) {
@@ -81,8 +93,10 @@ export class DeactivateAgentUseCase {
 
     const agent = await this.agentRepo.findById(agentId);
     if (!agent) throw new AgentNotFoundError();
-    if (agent.companyDsaId !== company.id) throw new AgentNotInCompanyError();
-    if (!agent.isActive) throw new AgentAlreadyInactiveError();
+
+    const agentDomain = new FieldAgentDomain(agent);
+    if (!agentDomain.belongsToCompany(company.id)) throw new AgentNotInCompanyError();
+    if (agentDomain.isAlreadyInactive()) throw new AgentAlreadyInactiveError();
 
     await this.agentRepo.deactivate(agentId);
 
@@ -92,10 +106,11 @@ export class DeactivateAgentUseCase {
 
 // Reactivate Agent
 
+@injectable()
 export class ReactivateAgentUseCase {
   constructor(
-    private readonly companyRepo: ICompanyDSARepository,
-    private readonly agentRepo: IFieldAgentRepository,
+    @inject(TOKENS.ICompanyDSARepository) private readonly companyRepo: ICompanyDSARepository,
+    @inject(TOKENS.IFieldAgentRepository) private readonly agentRepo: IFieldAgentRepository,
   ) {}
 
   async execute(userId: string, agentId: string) {
@@ -104,9 +119,11 @@ export class ReactivateAgentUseCase {
 
     const agent = await this.agentRepo.findById(agentId);
     if (!agent) throw new AgentNotFoundError();
-    if (agent.companyDsaId !== company.id) throw new AgentNotInCompanyError();
+
+    const agentDomain = new FieldAgentDomain(agent);
+    if (!agentDomain.belongsToCompany(company.id)) throw new AgentNotInCompanyError();
     // No-op guard: already active
-    if (agent.isActive) return { agentName: agent.fullName };
+    if (agentDomain.isActive) return { agentName: agent.fullName };
 
     await this.agentRepo.reactivate(agentId);
 

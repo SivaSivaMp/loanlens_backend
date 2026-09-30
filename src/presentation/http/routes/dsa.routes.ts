@@ -2,7 +2,7 @@ import { Router } from "express";
 import { authenticate } from "../middleware/authenticate";
 import { authorize } from "../middleware/authorize";
 import { validate } from "../middleware/validate";
-import { dsaController, leadController } from "@/container";
+import { dsaController, leadController, customerController } from "@/container";
 import {
   AgentListQuerySchema,
   UpdateCompanyProfileSchema,
@@ -18,7 +18,7 @@ const router = Router();
 const companyAuth = [authenticate, authorize("COMPANY_DSA")] as const;
 const agentAuth = [authenticate, authorize("FIELD_AGENT")] as const;
 
-// ─── Company DSA Profile ────────────────────────────────────────
+// ─── Company DSA Profile
 router.get("/dsa/company/profile", ...companyAuth, dsaController.getProfile);
 router.patch(
   "/dsa/company/profile",
@@ -27,7 +27,7 @@ router.patch(
   dsaController.updateProfile,
 );
 
-// ─── Agent Management ───────────────────────────────────────────
+// ─── Agent Management
 router.get(
   "/dsa/agents",
   ...companyAuth,
@@ -50,7 +50,7 @@ router.patch(
   dsaController.reactivateAgentHandler,
 );
 
-// ─── DSA Leads (M13) ────────────────────────────────────────────
+// ─── DSA Leads (M13)
 router.get(
   "/dsa/leads",
   ...companyAuth,
@@ -85,6 +85,21 @@ router.patch(
   ...companyAuth,
   validate(UpdateLeadNotesSchema),
   leadController.updateLeadNotesHandler,
+);
+
+// ─── Portal Customer Management ──────────────────────────────────────────────
+// Lists portal users registered on the customer portal, visible to this DSA.
+router.get(
+  "/dsa/customers",
+  ...companyAuth,
+  customerController.listCustomersHandler,
+);
+
+// Toggle portal user isActive (blocks/unblocks portal login immediately via Redis).
+router.patch(
+  "/dsa/customers/:portalUserId/status",
+  ...companyAuth,
+  customerController.toggleCustomerStatusHandler,
 );
 
 export default router;

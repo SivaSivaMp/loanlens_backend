@@ -1,13 +1,20 @@
-import { PortalRefreshToken, PortalUser } from "@/domian/entities/PortalUser";
+import { PortalRefreshToken, PortalUser } from "@/domain/entities/PortalUser";
 import {
   CreatePortalUserData,
   IPortalUserRepository,
-} from "@/domian/repositories/IPortalUserRepository";
+  PaginatedPortalUsers,
+  PortalUserFilters,
+  PortalUserListItem,
+} from "@/domain/repositories/IPortalUserRepository";
 import { PrismaClient } from "@prisma/client";
 import { blockPortalUser, unblockPortalUser } from "@/infrastructure/cache/portalBlocklist";
+import { normalizePagination } from "@/shared/helpers";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
 
+@injectable()
 export class PrismaPortalUserRepository implements IPortalUserRepository {
-  constructor(private readonly db: PrismaClient) {}
+  constructor(@inject(TOKENS.PrismaClient) private readonly db: PrismaClient) {}
 
   async findByEmail(email: string): Promise<PortalUser | null> {
     const user = await this.db.portalUser.findUnique({ where: { email } });
@@ -173,6 +180,65 @@ export class PrismaPortalUserRepository implements IPortalUserRepository {
 
   async deleteEmailVerificationToken(tokenId: string): Promise<void> {
     await this.db.portalEmailVerificationToken.delete({ where: { id: tokenId } });
+  }
+
+  async findAllPaginated(
+    companyDsaId: string,
+    filters: PortalUserFilters,
+  ): Promise<PaginatedPortalUsers> {
+    const { page, limit, skip } = normalizePagination(filters.page, filters.limit, 100, 20);
+
+    // Build search condition
+    const searchWhere = filters.search
+      ? {
+          OR: [
+            { fullName: { contains: filters.search, mode: 'insensitive' as const } },
+            { email:    { contains: filters.search, mode: 'insensitive' as const } },
+            { phone:    { contains: filters.search, mode: 'insensitive' as const } },
+          ],
+        }
+      : {};
+
+    const activeWhere =
+      filters.isActive !== undefined ? { isActive: filters.isActive } : {};
+
+    const where = { ...searchWhere, ...activeWhere };
+
+    const [rows, total] = await Promise.all([
+      this.db.portalUser.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          leads: {
+            where: { companyDsaId },
+            select: { id: true, status: true },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+      }),
+      this.db.portalUser.count({ where }),
+    ]);
+
+    const data: PortalUserListItem[] = rows.map((u) => {
+      const lead = u.leads[0] ?? null;
+      return {
+        id:            u.id,
+        fullName:      u.fullName,
+        email:         u.email,
+        phone:         u.phone,
+        isActive:      u.isActive,
+        emailVerified: u.emailVerified,
+        createdAt:     u.createdAt,
+        hasLead:       !!lead,
+        leadId:        lead?.id,
+        leadStatus:    lead?.status ?? undefined,
+      };
+    });
+
+    return { data, total, page, limit };
   }
 
   async setActive(userId: string, isActive: boolean): Promise<void> {

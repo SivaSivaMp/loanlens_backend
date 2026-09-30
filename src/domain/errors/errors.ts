@@ -111,3 +111,76 @@ export class PortalUserNotFoundError extends DomainError {
     super("Portal user not found", "PORTAL_USER_NOT_FOUND", 404);
   }
 }
+
+//Bank Errors
+export class BankNotFoundError extends DomainError {
+  constructor() {
+    super("Bank profile not found", "BANK_NOT_FOUND", 404);
+  }
+}
+
+export class BankAlreadyInactiveError extends DomainError {
+  constructor() {
+    super("Bank is already deactivated", "BANK_ALREADY_INACTIVE", 409);
+  }
+}
+
+//Product Errors
+
+export class ProductNotFoundError extends DomainError {
+  constructor() {
+    super("Product not found", "PRODUCT_NOT_FOUND", 404);
+  }
+}
+
+export class InvalidStatusTransitionError extends DomainError {
+  constructor(from: string, to: string) {
+    super(
+      `Cannot transition product status from ${from} to ${to}`,
+      "INVALID_STATUS_TRANSITION",
+      422,
+    );
+  }
+}
+
+export class ProductOwnershipError extends DomainError {
+  constructor() {
+    super("You do not own this product", "PRODUCT_OWNERSHIP_ERROR", 403);
+  }
+}
+
+// Agreement Errors
+
+export class AgreementAlreadyExistsError extends DomainError {
+  constructor() {
+    super(
+      "An agreement with this bank already exists",
+      "AGREEMENT_ALREADY_EXISTS",
+      409,
+    );
+  }
+}
+
+export class AgreementNotFoundError extends DomainError {
+  constructor() {
+    super("No agreement found with this bank", "AGREEMENT_NOT_FOUND", 404);
+  }
+}
+
+// Split Rule Errors
+
+export class SplitRuleNotFoundError extends DomainError {
+  constructor() {
+    super("Split rule not found", "SPLIT_RULE_NOT_FOUND", 404);
+  }
+}
+
+export class SplitRuleOwnershipError extends DomainError {
+  constructor() {
+    super(
+      "This split rule does not belong to your company",
+      "SPLIT_RULE_OWNERSHIP_ERROR",
+      403,
+    );
+  }
+}

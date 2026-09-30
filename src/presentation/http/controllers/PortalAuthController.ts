@@ -85,9 +85,6 @@ export class PortalAuthController {
       fullName: result.user.fullName,
     });
 
-    // Redirect to frontend callback page — tokens in query string are read
-    // by OAuthCallbackPage and then immediately replaced with the store state.
-    // Using hash (#) keeps tokens out of server logs entirely.
     res.redirect(
       `${env.FRONTEND_URL}/portal/oauth-callback#${params.toString()}`,
     );

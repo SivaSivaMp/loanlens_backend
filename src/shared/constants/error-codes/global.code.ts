@@ -1,0 +1,3 @@
+export const GLOBAL_ERROR_CODE = {
+  SEVER_ERROR_CODE: 'INTERNAL_SERVER_ERROR',
+} as const;

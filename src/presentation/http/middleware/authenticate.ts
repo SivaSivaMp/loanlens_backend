@@ -1,5 +1,5 @@
-import { UserRole } from "@/domian/entities/User";
-import { DomainError } from "@/domian/errors/DomainError";
+import { UserRole } from "@/domain/entities/User";
+import { DomainError } from "@/domain/errors/DomainError";
 import { JwtTokenService } from "@/infrastructure/services/JwtTokenService";
 import { isPortalUserBlocked } from "@/infrastructure/cache/portalBlocklist";
 import { isAgentBlocked } from "@/infrastructure/cache/agentBlocklist";
@@ -62,8 +62,6 @@ export function authenticate(
     return;
   }
 
-  // Check Redis blocklist for deactivated agents.
-  // Fail-open: if Redis is unavailable, don't block legitimate users.
   isAgentBlocked(userId)
     .then((blocked) => {
       if (blocked) {
@@ -86,13 +84,6 @@ export function authenticate(
     });
 }
 
-/**
- * authenticate portal
- *
- * Verifies the portal JWT then checks a Redis blocklist to immediately
- * reject deactivated customers even while their access token is still
- * cryptographically valid.
- */
 export function authenticatePortal(
   req: Request,
   res: Response,
@@ -120,9 +111,6 @@ export function authenticatePortal(
     return;
   }
 
-  // Check Redis blocklist — O(1), no DB hit.
-  // If the DSA deactivated this customer, we added their userId here
-  // so the next request is rejected immediately without waiting for
   // the access token to expire naturally.
   isPortalUserBlocked(userId)
     .then((blocked) => {

@@ -1,5 +1,5 @@
 import { logger } from "@/config/logger";
-import { DomainError } from "@/domian/errors/DomainError";
+import { DomainError } from "@/domain/errors/DomainError";
 import { Request, Response, NextFunction } from "express";
 /**
  *

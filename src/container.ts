@@ -1,3 +1,9 @@
+import "reflect-metadata";
+import { container } from "tsyringe";
+import { buildContainer } from "./infrastructure/di/container";
+import { TOKENS } from "./infrastructure/di/tokens";
+
+// ─── Use-cases ───────────────────────────────────────────────────────────────
 import { LoginUserUseCase } from "./application/use-cases/auth/LoginUserUseCase";
 import {
   ForgotPasswordUseCase,
@@ -17,15 +23,7 @@ import { RefreshTokenUseCase } from "./application/use-cases/auth/RefreshTokenUs
 import { RegisterUserUseCase } from "./application/use-cases/auth/RegisterUserUseCase";
 import { VerifyEmailUseCase } from "./application/use-cases/auth/VerifyEmailUseCase";
 import { ResendVerificationUseCase } from "./application/use-cases/auth/ResendVerificationUseCase";
-import { prisma } from "./infrastructure/database/prisma";
-import { PrismaPortalUserRepository } from "./infrastructure/database/repositories/PrismaPortalUserRepository";
-import { PrismaUserRepository } from "./infrastructure/database/repositories/PrismaUserRepository";
-import { BcryptHashService } from "./infrastructure/services/BcryptHashService";
-import { JwtTokenService } from "./infrastructure/services/JwtTokenService";
-import { NodemailerEmailService } from "./infrastructure/services/NodemailerEmailService";
-import { AuthController } from "./presentation/http/controllers/AuthController";
-import { PortalAuthController } from "./presentation/http/controllers/PortalAuthController";
-import { PrismaCompanyDSARepository } from "./infrastructure/database/repositories/PrismaCompanyDSARepository";
+
 import {
   DeactivateAgentUseCase,
   GetAgentDetailUseCase,
@@ -34,9 +32,7 @@ import {
   ReactivateAgentUseCase,
   UpdateCompanyProfileUseCase,
 } from "./application/use-cases/dsa/CompanyUseCases";
-import { PrismaFieldAgentRepository } from "./infrastructure/database/repositories/PrismaFieldAgentRepository";
-import { DSAController } from "./presentation/http/controllers/DSAController";
-import { PrismaLeadRepository } from "./infrastructure/database/repositories/PrismaLeadRepository";
+
 import {
   ListLeadsUseCase,
   GetLeadDetailUseCase,
@@ -45,114 +41,114 @@ import {
   UpdateLeadNotesUseCase,
   CreateLeadUseCase,
 } from "./application/use-cases/dsa/LeadUseCases";
+
+import {
+  ListCustomersUseCase,
+  ToggleCustomerStatusUseCase,
+} from "./application/use-cases/dsa/CustomerUseCases";
+
+import {
+  DeactivateBankUseCase,
+  GetBankProfileUseCase,
+  UpdateBankProfileUseCase,
+} from "./application/use-cases/bank/BankProfileUseCases";
+
+import {
+  CreateProductUseCase,
+  GetBankAnalyticsUseCase,
+  GetProductDetailUseCase,
+  GetProductsUseCase,
+  GetRateHistoryUseCase,
+  UpdateProductStatusUseCase,
+} from "./application/use-cases/bank/ProductUseCases";
+
+import {
+  CreateAgreementUseCase,
+  CreateSplitRuleUseCase,
+  DeleteSplitRuleUseCase,
+  ListAgreementsUseCase,
+  ListBanksUseCase,
+  ListSplitRulesUseCase,
+  ToggleAgreementUseCase,
+  UpdateSplitRuleUseCase,
+} from "./application/use-cases/dsa/AgreementUseCases";
+
+// ─── Controllers ─────────────────────────────────────────────────────────────
+import { AuthController } from "./presentation/http/controllers/AuthController";
+import { PortalAuthController } from "./presentation/http/controllers/PortalAuthController";
+import { DSAController } from "./presentation/http/controllers/DSAController";
 import { LeadController } from "./presentation/http/controllers/LeadController";
+import { CustomerController } from "./presentation/http/controllers/CustomerController";
+import { AgreementController } from "./presentation/http/controllers/AgreementController";
+import { BankController } from "./presentation/http/controllers/BankController";
+import { ProductController } from "./presentation/http/controllers/ProductController";
 
+// ─── Bootstrap DI container ──────────────────────────────────────────────────
+buildContainer();
 
-//  Repositories
-//poral and user repositories
-const userRepository = new PrismaUserRepository(prisma);
-const portalUserRepository = new PrismaPortalUserRepository(prisma);
+// ─── Resolve use-cases via TSyringe (auto-wires all dependencies) ─────────────
 
-//company
-const companyDSARepository = new PrismaCompanyDSARepository(prisma);
-const fieldAgentRepository = new PrismaFieldAgentRepository(prisma);
+// B2B Auth
+const registerUserUseCase    = container.resolve(RegisterUserUseCase);
+const loginUserUseCase       = container.resolve(LoginUserUseCase);
+const refreshTokenUseCase    = container.resolve(RefreshTokenUseCase);
+const verifyEmailUseCase     = container.resolve(VerifyEmailUseCase);
+const resendVerificationUseCase = container.resolve(ResendVerificationUseCase);
+const forgotPasswordUseCase  = container.resolve(ForgotPasswordUseCase);
+const resetPasswordUseCase   = container.resolve(ResetPasswordUseCase);
 
-// Services
-
-const tokenService = new JwtTokenService();
-const hashService = new BcryptHashService();
-const emailService = new NodemailerEmailService();
-
-// B2B Auth Use Cases
-
-const registerUserUseCase = new RegisterUserUseCase(
-  userRepository,
-  hashService,
-  emailService,
-);
-const loginUserUseCase = new LoginUserUseCase(
-  userRepository,
-  hashService,
-  tokenService,
-);
-const refreshTokenUseCase = new RefreshTokenUseCase(
-  userRepository,
-  tokenService,
-);
-const verifyEmailUseCase = new VerifyEmailUseCase(userRepository);
-const resendVerificationUseCase = new ResendVerificationUseCase(
-  userRepository,
-  emailService,
-);
-const forgotPasswordUseCase = new ForgotPasswordUseCase(
-  userRepository,
-  emailService,
-);
-const resetPasswordUseCase = new ResetPasswordUseCase(
-  userRepository,
-  hashService,
-);
-
-// Portal Auth Use Cases
-
-const registerPortalUserUseCase = new RegisterPortalUserUseCase(
-  portalUserRepository,
-  hashService,
-  emailService,
-  prisma,
-);
-const loginPortalUserUseCase = new LoginPortalUserUseCase(
-  portalUserRepository,
-  hashService,
-  tokenService,
-);
-const verifyPortalEmailUseCase = new VerifyPortalEmailUseCase(
-  portalUserRepository,
-);
-const resendPortalVerificationUseCase = new ResendPortalVerificationUseCase(
-  portalUserRepository,
-  emailService,
-);
-const forgotPasswordPortalUseCase = new ForgotPasswordPortalUseCase(
-  portalUserRepository,
-  emailService,
-);
-const resetPasswordPortalUseCase = new ResetPasswordPortalUseCase(
-  portalUserRepository,
-  hashService,
-);
-
-const googleOAuthUseCase = new GoogleOAuthUseCase(
-  portalUserRepository,
-  tokenService,
-);
+// Portal Auth
+const registerPortalUserUseCase      = container.resolve(RegisterPortalUserUseCase);
+const loginPortalUserUseCase         = container.resolve(LoginPortalUserUseCase);
+const verifyPortalEmailUseCase       = container.resolve(VerifyPortalEmailUseCase);
+const resendPortalVerificationUseCase = container.resolve(ResendPortalVerificationUseCase);
+const forgotPasswordPortalUseCase    = container.resolve(ForgotPasswordPortalUseCase);
+const resetPasswordPortalUseCase     = container.resolve(ResetPasswordPortalUseCase);
+const googleOAuthUseCase             = container.resolve(GoogleOAuthUseCase);
 
 // Register Passport Google strategy (no-op if env vars not set)
 configureGoogleStrategy(googleOAuthUseCase);
 
-//company Dsa
+// DSA — Company
+const getCompanyProfileUseCase   = container.resolve(GetCompanyProfileUseCase);
+const updateCompanyProfileUseCase = container.resolve(UpdateCompanyProfileUseCase);
+const listAgentsUseCase          = container.resolve(ListAgentsUseCase);
+const getAgentDetailUseCase      = container.resolve(GetAgentDetailUseCase);
+const deactivateAgentUseCase     = container.resolve(DeactivateAgentUseCase);
+const reactivateAgentUseCase     = container.resolve(ReactivateAgentUseCase);
 
-const getCompanyProfileUseCase = new GetCompanyProfileUseCase(
-  companyDSARepository,
-);
-const updateCompanyProfileUseCase = new UpdateCompanyProfileUseCase(
-  companyDSARepository,
-);
-const listAgentsUseCase = new ListAgentsUseCase(
-  companyDSARepository,
-  fieldAgentRepository,
-);
-const getAgentDetailUseCase = new GetAgentDetailUseCase(
-  companyDSARepository,
-  fieldAgentRepository,
-);
-const deactivateAgentUseCase = new DeactivateAgentUseCase(
-  companyDSARepository,
-  fieldAgentRepository,
-);
+// Bank
+const getBankProfileUseCase    = container.resolve(GetBankProfileUseCase);
+const updateBankProfileUseCase = container.resolve(UpdateBankProfileUseCase);
+const deactivateBankUseCase    = container.resolve(DeactivateBankUseCase);
 
-//  Controllers
+// Products
+const createProductUseCase       = container.resolve(CreateProductUseCase);
+const getProductsUseCase         = container.resolve(GetProductsUseCase);
+const getProductDetailUseCase    = container.resolve(GetProductDetailUseCase);
+const updateProductStatusUseCase = container.resolve(UpdateProductStatusUseCase);
+const getRateHistoryUseCase      = container.resolve(GetRateHistoryUseCase);
+const getBankAnalyticsUseCase    = container.resolve(GetBankAnalyticsUseCase);
 
+// Agreements & Split Rules
+const listBanksUseCase      = container.resolve(ListBanksUseCase);
+const listAgreementsUseCase = container.resolve(ListAgreementsUseCase);
+const createAgreementUseCase = container.resolve(CreateAgreementUseCase);
+const toggleAgreementUseCase = container.resolve(ToggleAgreementUseCase);
+const listSplitRulesUseCase  = container.resolve(ListSplitRulesUseCase);
+const createSplitRuleUseCase = container.resolve(CreateSplitRuleUseCase);
+const updateSplitRuleUseCase = container.resolve(UpdateSplitRuleUseCase);
+const deleteSplitRuleUseCase = container.resolve(DeleteSplitRuleUseCase);
+
+// Leads
+const listLeadsUseCase        = container.resolve(ListLeadsUseCase);
+const getLeadDetailUseCase    = container.resolve(GetLeadDetailUseCase);
+const assignLeadUseCase       = container.resolve(AssignLeadUseCase);
+const updateLeadStatusUseCase = container.resolve(UpdateLeadStatusUseCase);
+const updateLeadNotesUseCase  = container.resolve(UpdateLeadNotesUseCase);
+const createLeadUseCase       = container.resolve(CreateLeadUseCase);
+
+// ─── Controllers (still constructed manually — they receive use-cases not DI tokens) ─
 export const authController = new AuthController(
   registerUserUseCase,
   loginUserUseCase,
@@ -172,23 +168,15 @@ export const portalAuthController = new PortalAuthController(
   resetPasswordPortalUseCase,
   googleOAuthUseCase,
 );
+
 export const dsaController = new DSAController(
   getCompanyProfileUseCase,
   updateCompanyProfileUseCase,
   listAgentsUseCase,
   getAgentDetailUseCase,
   deactivateAgentUseCase,
-  new ReactivateAgentUseCase(companyDSARepository, fieldAgentRepository),
+  reactivateAgentUseCase,
 );
-
-// Lead repository & use cases
-const leadRepository = new PrismaLeadRepository(prisma);
-const listLeadsUseCase = new ListLeadsUseCase(companyDSARepository, leadRepository);
-const getLeadDetailUseCase = new GetLeadDetailUseCase(companyDSARepository, leadRepository);
-const assignLeadUseCase = new AssignLeadUseCase(companyDSARepository, leadRepository);
-const updateLeadStatusUseCase = new UpdateLeadStatusUseCase(companyDSARepository, leadRepository, portalUserRepository);
-const updateLeadNotesUseCase = new UpdateLeadNotesUseCase(leadRepository);
-const createLeadUseCase = new CreateLeadUseCase(companyDSARepository, leadRepository, prisma);
 
 export const leadController = new LeadController(
   listLeadsUseCase,
@@ -197,4 +185,35 @@ export const leadController = new LeadController(
   updateLeadStatusUseCase,
   updateLeadNotesUseCase,
   createLeadUseCase,
+);
+
+export const customerController = new CustomerController(
+  container.resolve(ListCustomersUseCase),
+  container.resolve(ToggleCustomerStatusUseCase),
+);
+
+export const agreementController = new AgreementController(
+  listBanksUseCase,
+  listAgreementsUseCase,
+  createAgreementUseCase,
+  toggleAgreementUseCase,
+  listSplitRulesUseCase,
+  createSplitRuleUseCase,
+  updateSplitRuleUseCase,
+  deleteSplitRuleUseCase,
+);
+
+export const bankController = new BankController(
+  getBankProfileUseCase,
+  updateBankProfileUseCase,
+  deactivateBankUseCase,
+  getBankAnalyticsUseCase,
+);
+
+export const productController = new ProductController(
+  createProductUseCase,
+  getProductsUseCase,
+  getProductDetailUseCase,
+  updateProductStatusUseCase,
+  getRateHistoryUseCase,
 );

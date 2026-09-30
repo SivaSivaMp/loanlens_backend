@@ -1,0 +1,40 @@
+// ─────────────────────────────────────────────────
+// M10 — Notifications (B2B)
+// M11 — Analytics
+// Models: Notification, ProductImpression
+// ─────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  metadata  Json?
+  isRead    Boolean          @default(false)
+  emailSent Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model ProductImpression {
+  id           String   @id @default(cuid())
+  productId    String
+  fieldAgentId String
+  searchId     String?
+  impressedAt  DateTime @default(now())
+
+  product    LoanProduct   @relation(fields: [productId], references: [id])
+  fieldAgent FieldAgentDSA @relation(fields: [fieldAgentId], references: [id])
+  search     SavedSearch?  @relation(fields: [searchId], references: [id])
+
+  @@index([productId])
+  @@index([fieldAgentId])
+  @@index([impressedAt])
+  @@map("product_impressions")
+}

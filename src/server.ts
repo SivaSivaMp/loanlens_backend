@@ -1,3 +1,4 @@
+import "reflect-metadata"; // Must be first — required by TSyringe
 import { env } from "./config/env";
 import { logger } from "./config/logger";
 import { connectRedis, redis } from "./infrastructure/cache/redis";

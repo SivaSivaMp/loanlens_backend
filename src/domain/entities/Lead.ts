@@ -1,4 +1,4 @@
-﻿export type LeadStatus =
+export type LeadStatus =
   | 'PENDING'
   | 'ASSIGNED'
   | 'PROPOSAL_SENT'
@@ -77,3 +77,27 @@ export interface CreateLeadData {
   employmentType: string
   existingEmi: number
 }
+
+/**
+ * Domain class wrapping a Lead entity.
+ * Encapsulates business rules about how lead status
+ * affects related domain objects.
+ */
+export class LeadDomain {
+  constructor(private readonly props: Lead) {}
+
+  /**
+   * Returns true if the portal user linked to this lead should remain active.
+   *
+   * Business rule: A portal user is deactivated only when their lead
+   * reaches a terminal state (CLOSED or REJECTED).
+   */
+  shouldPortalUserBeActive(): boolean {
+    return this.props.status !== 'CLOSED' && this.props.status !== 'REJECTED';
+  }
+
+  get id(): string { return this.props.id; }
+  get status(): LeadStatus { return this.props.status; }
+  get portalUserId(): string { return this.props.portalUserId; }
+}
+

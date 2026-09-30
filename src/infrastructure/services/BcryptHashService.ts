@@ -1,6 +1,8 @@
 import { IHashService } from "@/application/interfaces/IHashService";
 import bcrypt from "bcryptjs";
+import { injectable } from "tsyringe";
 
+@injectable()
 export class BcryptHashService implements IHashService {
   private readonly saltRounds = 12;
 

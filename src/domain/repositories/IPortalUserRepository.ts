@@ -9,6 +9,34 @@ export interface CreatePortalUserData {
   emailVerified?: boolean;
 }
 
+export interface PortalUserFilters {
+  search?: string
+  isActive?: boolean
+  page?: number
+  limit?: number
+}
+
+export interface PortalUserListItem {
+  id: string
+  fullName: string
+  email: string
+  phone: string | null
+  isActive: boolean
+  emailVerified: boolean
+  createdAt: Date
+  // Lead status for this DSA company
+  hasLead: boolean
+  leadId?: string
+  leadStatus?: string
+}
+
+export interface PaginatedPortalUsers {
+  data: PortalUserListItem[]
+  total: number
+  page: number
+  limit: number
+}
+
 export interface IPortalUserRepository {
   findByEmail(email: string): Promise<PortalUser | null>;
   findById(id: string): Promise<PortalUser | null>;
@@ -16,6 +44,9 @@ export interface IPortalUserRepository {
   create(data: CreatePortalUserData): Promise<PortalUser>;
   updateEmailVerified(userId: string): Promise<void>;
   linkGoogleId(userId: string, googleId: string): Promise<void>;
+
+  // Customer list for DSA
+  findAllPaginated(companyDsaId: string, filters: PortalUserFilters): Promise<PaginatedPortalUsers>;
 
   // Refresh tokens
   createRefreshToken(

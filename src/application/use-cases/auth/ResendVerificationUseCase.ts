@@ -1,12 +1,15 @@
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
 import crypto from "crypto";
 import { ResendVerificationDto } from "@/application/dtos/auth/auth.dto";
 import { IEmailService } from "@/application/interfaces/IEmailService";
-import { IUserRepository } from "@/domian/repositories/IUserRepository";
+import { IUserRepository } from "@/domain/repositories/IUserRepository";
 
+@injectable()
 export class ResendVerificationUseCase {
   constructor(
-    private readonly userRepo: IUserRepository,
-    private readonly emailService: IEmailService,
+    @inject(TOKENS.IUserRepository) private readonly userRepo: IUserRepository,
+    @inject(TOKENS.IEmailService) private readonly emailService: IEmailService,
   ) {}
 
   async execute(dto: ResendVerificationDto): Promise<void> {

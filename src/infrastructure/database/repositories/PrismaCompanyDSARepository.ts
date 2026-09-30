@@ -1,32 +1,45 @@
 import { PrismaClient } from "@prisma/client";
-import { ICompanyDSARepository } from "@/domian/repositories/ICompanyDSARepository";
+import { ICompanyDSARepository } from "@/domain/repositories/ICompanyDSARepository";
 import {
   CompanyDSA,
   CompanyDSAWithTeamSummary,
   UpdateCompanyData,
-} from "@/domian/entities/CompanyDSA";
+} from "@/domain/entities/CompanyDSA";
+import { BaseRepository } from "./BaseRepository";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
 
-export class PrismaCompanyDSARepository implements ICompanyDSARepository {
-  constructor(private readonly db: PrismaClient) {}
+@injectable()
+export class PrismaCompanyDSARepository
+  extends BaseRepository<CompanyDSA, never, UpdateCompanyData>
+  implements ICompanyDSARepository
+{
+  constructor(@inject(TOKENS.PrismaClient) prisma: PrismaClient) {
+    super(prisma, prisma.companyDSA);
+  }
 
   async findByUserId(userId: string): Promise<CompanyDSA | null> {
-    const row = await this.db.companyDSA.findUnique({ where: { userId } });
+    const row = await this.prisma.companyDSA.findUnique({ where: { userId } });
     return row ? this.map(row) : null;
   }
-  async findById(id: string): Promise<CompanyDSA | null> {
-    const row = await this.db.companyDSA.findUnique({ where: { id } });
+
+  // override to apply domain mapping
+  override async findById(id: string): Promise<CompanyDSA | null> {
+    const row = await this.prisma.companyDSA.findUnique({ where: { id } });
     return row ? this.map(row) : null;
   }
+
   async findByCompanyCode(code: string): Promise<CompanyDSA | null> {
-    const row = await this.db.companyDSA.findUnique({
+    const row = await this.prisma.companyDSA.findUnique({
       where: { companyCode: code },
     });
     return row ? this.map(row) : null;
   }
+
   async getWithTeamSummary(
     userId: string,
   ): Promise<CompanyDSAWithTeamSummary | null> {
-    const row = await this.db.companyDSA.findUnique({
+    const row = await this.prisma.companyDSA.findUnique({
       where: { userId },
       include: {
         _count: {
@@ -48,14 +61,10 @@ export class PrismaCompanyDSARepository implements ICompanyDSARepository {
       teamSummary: { totalAgents, activeAgents, inactiveAgents },
     };
   }
-  async update(
-    companyId: string,
-    data: UpdateCompanyData,
-  ): Promise<CompanyDSA> {
-    const row = await this.db.companyDSA.update({
-      where: { id: companyId },
-      data,
-    });
+
+  // update defined by ICompanyDSARepository with (companyId: string, data)
+  async update(companyId: string, data: UpdateCompanyData): Promise<CompanyDSA> {
+    const row = await this.prisma.companyDSA.update({ where: { id: companyId }, data });
     return this.map(row);
   }
 

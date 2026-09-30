@@ -1,21 +1,24 @@
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
 import crypto from "crypto";
 import { RegisterUserDto } from "@/application/dtos/auth/auth.dto";
 import { IEmailService } from "@/application/interfaces/IEmailService";
 import { IHashService } from "@/application/interfaces/IHashService";
-import { UserRole } from "@/domian/entities/User";
-import { EmailAlreadyExistsError } from "@/domian/errors/errors";
-import { IUserRepository } from "@/domian/repositories/IUserRepository";
+import { UserRole } from "@/domain/entities/User";
+import { EmailAlreadyExistsError } from "@/domain/errors/errors";
+import { IUserRepository } from "@/domain/repositories/IUserRepository";
 
 export interface RegisterUserResult {
   userId: string;
   message: string;
 }
 
+@injectable()
 export class RegisterUserUseCase {
   constructor(
-    private readonly userRepo: IUserRepository,
-    private readonly hashService: IHashService,
-    private readonly emailService: IEmailService,
+    @inject(TOKENS.IUserRepository) private readonly userRepo: IUserRepository,
+    @inject(TOKENS.IHashService) private readonly hashService: IHashService,
+    @inject(TOKENS.IEmailService) private readonly emailService: IEmailService,
   ) {}
   async execute(dto: RegisterUserDto): Promise<RegisterUserResult> {
     //check for already exsting email

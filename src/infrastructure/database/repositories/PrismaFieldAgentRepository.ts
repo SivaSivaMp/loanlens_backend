@@ -3,28 +3,39 @@ import {
   FieldAgentDetail,
   FieldAgentListItem,
   UpdateFieldAgentData,
-} from "@/domian/entities/FieldAgent";
+} from "@/domain/entities/FieldAgent";
 import {
   AgentFilters,
   IFieldAgentRepository,
   PaginatedAgents,
-} from "@/domian/repositories/IFieldAgentRepository";
+} from "@/domain/repositories/IFieldAgentRepository";
 import { PrismaClient } from "@prisma/client";
 import {
   blockAgent,
   unblockAgent,
 } from "@/infrastructure/cache/agentBlocklist";
+import { BaseRepository } from "./BaseRepository";
+import { normalizePagination } from "@/shared/helpers";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
 
-export class PrismaFieldAgentRepository implements IFieldAgentRepository {
-  constructor(private readonly db: PrismaClient) {}
+@injectable()
+export class PrismaFieldAgentRepository
+  extends BaseRepository<FieldAgent, never, UpdateFieldAgentData>
+  implements IFieldAgentRepository
+{
+  constructor(@inject(TOKENS.PrismaClient) prisma: PrismaClient) {
+    super(prisma, prisma.fieldAgentDSA);
+  }
 
-  async findById(id: string): Promise<FieldAgent | null> {
-    const row = await this.db.fieldAgentDSA.findUnique({ where: { id } });
+  // override to apply domain mapping
+  override async findById(id: string): Promise<FieldAgent | null> {
+    const row = await this.prisma.fieldAgentDSA.findUnique({ where: { id } });
     return row ? this.map(row) : null;
   }
 
   async findByUserId(userId: string): Promise<FieldAgent | null> {
-    const row = await this.db.fieldAgentDSA.findUnique({ where: { userId } });
+    const row = await this.prisma.fieldAgentDSA.findUnique({ where: { userId } });
     return row ? this.map(row) : null;
   }
 
@@ -32,7 +43,7 @@ export class PrismaFieldAgentRepository implements IFieldAgentRepository {
     agentId: string,
     companyDsaId: string,
   ): Promise<FieldAgentDetail | null> {
-    const row = await this.db.fieldAgentDSA.findFirst({
+    const row = await this.prisma.fieldAgentDSA.findFirst({
       where: { id: agentId, companyDsaId },
       include: {
         user: { select: { email: true } },
@@ -90,34 +101,30 @@ export class PrismaFieldAgentRepository implements IFieldAgentRepository {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const page = Math.max(1, Number(filters.page) || 1);
-    const limit = Math.min(100, Math.max(1, Number(filters.limit) || 20));
+    const { page, limit, skip } = normalizePagination(filters.page, filters.limit);
 
-    // Use Promise.all instead of $transaction to preserve include types
     const [rows, total] = await Promise.all([
-      this.db.fieldAgentDSA.findMany({
+      this.prisma.fieldAgentDSA.findMany({
         where,
-        skip: (page - 1) * limit,
+        skip,
         take: limit,
         orderBy: { joinedAt: "desc" },
         include: {
           user: { select: { email: true } },
-
           commissions: {
             where: { createdAt: { gte: monthStart } },
             select: { agentEarning: true },
           },
         },
       }),
-      this.db.fieldAgentDSA.count({ where }),
+      this.prisma.fieldAgentDSA.count({ where }),
     ]);
 
-    // Count applications per agent for this month in a single groupBy query
-    const appCounts = await this.db.loanApplication.groupBy({
+    const appCounts = await this.prisma.loanApplication.groupBy({
       by: ["fieldAgentId"],
       where: {
         fieldAgentId: { in: rows.map((r) => r.id) },
-        appliedAt: { gte: monthStart }, // LoanApplication date field
+        appliedAt: { gte: monthStart },
       },
       _count: true,
     });
@@ -129,10 +136,10 @@ export class PrismaFieldAgentRepository implements IFieldAgentRepository {
       ...this.map(r),
       email: r.user.email,
       stats: {
-        searchesThisMonth: 0, // Week 5 adds SavedSearch tracking
+        searchesThisMonth: 0,
         applicationsThisMonth: appCountMap[r.id] ?? 0,
         expectedCommissionThisMonth: r.commissions.reduce(
-          (sum: number, c: { agentEarning: any }) =>
+          (sum: number, c: { agentEarning: unknown }) =>
             sum + Number(c.agentEarning),
           0,
         ),
@@ -143,48 +150,38 @@ export class PrismaFieldAgentRepository implements IFieldAgentRepository {
   }
 
   async deactivate(agentId: string): Promise<FieldAgent> {
-    const row = await this.db.fieldAgentDSA.update({
+    const row = await this.prisma.fieldAgentDSA.update({
       where: { id: agentId },
       data: { isActive: false },
     });
-    // Deactivate the linked user account so they can't log in again
-    await this.db.user.update({
+    await this.prisma.user.update({
       where: { id: row.userId },
       data: { isActive: false },
     });
-    // Revoke all B2B refresh tokens so existing "remember me" sessions die
-    await this.db.refreshToken.updateMany({
+    await this.prisma.refreshToken.updateMany({
       where: { userId: row.userId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
-
     await blockAgent(row.userId, 15 * 60);
     return this.map(row);
   }
 
   async reactivate(agentId: string): Promise<FieldAgent> {
-    const row = await this.db.fieldAgentDSA.update({
+    const row = await this.prisma.fieldAgentDSA.update({
       where: { id: agentId },
       data: { isActive: true },
     });
-    // Re-enable the user account so they can log in again
-    await this.db.user.update({
+    await this.prisma.user.update({
       where: { id: row.userId },
       data: { isActive: true },
     });
-    // Remove from Redis blocklist so future access tokens are accepted again
     await unblockAgent(row.userId);
     return this.map(row);
   }
 
-  async update(
-    agentId: string,
-    data: UpdateFieldAgentData,
-  ): Promise<FieldAgent> {
-    const row = await this.db.fieldAgentDSA.update({
-      where: { id: agentId },
-      data,
-    });
+  // update defined by IFieldAgentRepository with (agentId: string, data)
+  async update(agentId: string, data: UpdateFieldAgentData): Promise<FieldAgent> {
+    const row = await this.prisma.fieldAgentDSA.update({ where: { id: agentId }, data });
     return this.map(row);
   }
 

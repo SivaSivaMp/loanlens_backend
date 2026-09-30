@@ -1,5 +1,5 @@
-import { UserRole } from "@/domian/entities/User";
-import { ForbiddenError } from "@/domian/errors/errors";
+import { UserRole } from "@/domain/entities/User";
+import { ForbiddenError } from "@/domain/errors/errors";
 import { Request, Response, NextFunction } from "express";
 
 export function authorize(...allowedRoles: UserRole[]) {

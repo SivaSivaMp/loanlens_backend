@@ -2,7 +2,9 @@ import { IEmailService } from "@/application/interfaces/IEmailService";
 import { env } from "@/config/env";
 import { logger } from "@/config/logger";
 import nodemailer from "nodemailer";
+import { injectable } from "tsyringe";
 
+@injectable()
 export class NodemailerEmailService implements IEmailService {
   private readonly transporter = nodemailer.createTransport({
     host: env.SMTP_HOST,

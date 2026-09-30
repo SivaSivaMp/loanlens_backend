@@ -39,3 +39,32 @@ export interface EmailVerificationToken {
   expiresAt: Date;
   createdAt: Date;
 }
+
+export class UserDomain {
+  constructor(private readonly props: User) {}
+
+  canLogin(): boolean {
+    return this.props.isActive && this.props.emailVerified;
+  }
+
+  isAccountActive(): boolean {
+    return this.props.isActive;
+  }
+
+  hasVerifiedEmail(): boolean {
+    return this.props.emailVerified;
+  }
+
+  get id(): string {
+    return this.props.id;
+  }
+  get email(): string {
+    return this.props.email;
+  }
+  get role(): UserRole {
+    return this.props.role;
+  }
+  get passwordHash(): string {
+    return this.props.passwordHash;
+  }
+}

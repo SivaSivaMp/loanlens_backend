@@ -1,0 +1,58 @@
+// ─────────────────────────────────────────────────
+// M09 — Commission
+// Models: CommissionTransaction, BankDisbursementReport
+// ─────────────────────────────────────────────────
+
+model CommissionTransaction {
+  id                String           @id @default(cuid())
+  loanApplicationId String           @unique
+  fieldAgentId      String
+  companyDsaId      String
+  bankId            String
+  productId         String
+  appliedAmount     Float
+  commissionRate    Float
+  grossAmount       Float
+  agentEarning      Float
+  companyEarning    Float
+  status            CommissionStatus @default(EXPECTED)
+  expectedPayDate   DateTime?
+  actualPayDate     DateTime?
+  razorpayPayoutId  String?
+  tdsAmount         Float?
+  tdsPercent        Float?
+  gstInvoiceNumber  String?
+  gstInvoiceUrl     String?
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  loanApplication LoanApplication @relation(fields: [loanApplicationId], references: [id])
+  fieldAgent      FieldAgentDSA   @relation(fields: [fieldAgentId], references: [id])
+  companyDsa      CompanyDSA      @relation(fields: [companyDsaId], references: [id])
+  bank            Bank            @relation(fields: [bankId], references: [id])
+  product         LoanProduct     @relation(fields: [productId], references: [id])
+
+  @@index([fieldAgentId])
+  @@index([companyDsaId])
+  @@index([bankId])
+  @@index([status])
+  @@map("commission_transactions")
+}
+
+model BankDisbursementReport {
+  id            String                   @id @default(cuid())
+  bankId        String
+  csvUrl        String
+  totalRows     Int
+  matchedRows   Int                      @default(0)
+  unmatchedRows Int                      @default(0)
+  status        DisbursementReportStatus @default(PENDING)
+  uploadedAt    DateTime                 @default(now())
+  processedAt   DateTime?
+
+  bank Bank @relation(fields: [bankId], references: [id])
+
+  @@index([bankId])
+  @@map("bank_disbursement_reports")
+}

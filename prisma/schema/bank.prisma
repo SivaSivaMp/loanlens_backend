@@ -1,0 +1,47 @@
+// ─────────────────────────────────────────────────
+// M02 — Bank
+// Models: Bank, CompanyBankAgreement
+// ─────────────────────────────────────────────────
+
+model Bank {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  name          String
+  type          BankType
+  logoUrl       String?
+  gstin         String?
+  licenceNumber String?
+  contactEmail  String
+  contactPhone  String?
+  websiteUrl    String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user                User                     @relation(fields: [userId], references: [id])
+  products            LoanProduct[]
+  agreements          CompanyBankAgreement[]
+  applications        LoanApplication[]
+  commissions         CommissionTransaction[]
+  disbursementReports BankDisbursementReport[]
+
+  @@map("banks")
+}
+
+model CompanyBankAgreement {
+  id                   String   @id @default(cuid())
+  companyDsaId         String
+  bankId               String
+  agreedCommissionRate Float?
+  isActive             Boolean  @default(true)
+  agreementDate        DateTime @default(now())
+  notes                String?
+
+  companyDsa CompanyDSA @relation(fields: [companyDsaId], references: [id])
+  bank       Bank       @relation(fields: [bankId], references: [id])
+
+  @@unique([companyDsaId, bankId])
+  @@index([companyDsaId])
+  @@index([bankId])
+  @@map("company_bank_agreements")
+}

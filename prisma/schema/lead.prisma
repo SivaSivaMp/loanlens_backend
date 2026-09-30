@@ -1,0 +1,77 @@
+// ─────────────────────────────────────────────────
+// M13 — Leads & Proposals
+// Models: Lead, Proposal, ProposalProduct
+// ─────────────────────────────────────────────────
+
+model Lead {
+  id             String         @id @default(cuid())
+  portalUserId   String
+  companyDsaId   String
+  fieldAgentId   String?
+  productId      String?
+  loanType       LoanType
+  requiredAmount Float
+  customerNote   String?
+  monthlyIncome  Float
+  cibilScore     Int
+  employmentType EmploymentType
+  existingEmi    Float          @default(0)
+  state          String?
+  status         LeadStatus     @default(PENDING)
+  assignedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  portalUser   PortalUser         @relation(fields: [portalUserId], references: [id])
+  companyDsa   CompanyDSA         @relation(fields: [companyDsaId], references: [id])
+  fieldAgent   FieldAgentDSA?     @relation(fields: [fieldAgentId], references: [id])
+  proposals    Proposal[]
+  crmCustomer  Customer?
+  callSessions VideoCallSession[]
+
+  @@index([portalUserId])
+  @@index([companyDsaId])
+  @@index([fieldAgentId])
+  @@index([status])
+  @@map("leads")
+}
+
+model Proposal {
+  id           String         @id @default(cuid())
+  leadId       String
+  fieldAgentId String
+  agentNote    String?
+  status       ProposalStatus @default(DRAFT)
+  sentAt       DateTime?
+  viewedAt     DateTime?
+  confirmedAt  DateTime?
+  rejectedAt   DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  lead                Lead              @relation(fields: [leadId], references: [id])
+  fieldAgent          FieldAgentDSA     @relation(fields: [fieldAgentId], references: [id])
+  recommendedProducts ProposalProduct[]
+
+  @@index([leadId])
+  @@index([fieldAgentId])
+  @@map("proposals")
+}
+
+model ProposalProduct {
+  id           String  @id @default(cuid())
+  proposalId   String
+  productId    String
+  productName  String
+  bankName     String
+  appliedRate  Float
+  estimatedEmi Float
+  loanAmount   Float
+  tenureMonths Int
+  agentReason  String?
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@map("proposal_products")
+}

@@ -9,7 +9,7 @@ import {
   UpdateLeadNotesUseCase,
   CreateLeadUseCase,
 } from '@/application/use-cases/dsa/LeadUseCases'
-import type { LeadFilters, LeadStatus } from '@/domian/entities/Lead'
+import type { LeadFilters, LeadStatus } from '@/domain/entities/Lead'
 
 export class LeadController {
   constructor(

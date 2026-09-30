@@ -1,3 +1,5 @@
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
 import {
   LoginUserDto,
   ResendVerificationDto,
@@ -14,19 +16,18 @@ import {
   EmailNotVerifiedError,
   InvalidCredentialsError,
   InvalidTokenError,
-} from "@/domian/errors/errors";
-import { IPortalUserRepository } from "@/domian/repositories/IPortalUserRepository";
-import { PrismaClient } from "@prisma/client";
+} from "@/domain/errors/errors";
+import { IPortalUserRepository } from "@/domain/repositories/IPortalUserRepository";
 import crypto from "crypto";
 
 //  Register
 
+@injectable()
 export class RegisterPortalUserUseCase {
   constructor(
-    private readonly portalUserRepo: IPortalUserRepository,
-    private readonly hashService: IHashService,
-    private readonly emailService: IEmailService,
-    private readonly db: PrismaClient,
+    @inject(TOKENS.IPortalUserRepository) private readonly portalUserRepo: IPortalUserRepository,
+    @inject(TOKENS.IHashService) private readonly hashService: IHashService,
+    @inject(TOKENS.IEmailService) private readonly emailService: IEmailService,
   ) {}
 
   async execute(dto: RegisterPortalUserDto) {
@@ -54,30 +55,6 @@ export class RegisterPortalUserUseCase {
       .sendPortalVerificationEmail(user.email, verifyToken, user.fullName)
       .catch(() => {});
 
-    // Auto-create a PENDING lead for every active CompanyDSA so the
-    // new portal customer is immediately visible in each DSA's lead list.
-    this.db.companyDSA
-      .findMany({ where: { isActive: true }, select: { id: true } })
-      .then((companies) => {
-        if (companies.length === 0) return;
-        return this.db.lead.createMany({
-          data: companies.map((c) => ({
-            portalUserId:   user.id,
-            companyDsaId:   c.id,
-            loanType:       "HOME" as const,
-            requiredAmount: 0,
-            monthlyIncome:  0,
-            cibilScore:     0,
-            employmentType: "SALARIED" as const,
-            existingEmi:    0,
-            status:         "PENDING" as const,
-            customerNote:   "Auto-created on portal registration — details pending.",
-          })),
-          skipDuplicates: true,
-        });
-      })
-      .catch(() => {}); // non-blocking; registration still succeeds if this fails
-
     return {
       userId: user.id,
       message: "Account created. Please verify your email",
@@ -87,8 +64,11 @@ export class RegisterPortalUserUseCase {
 
 // Verify Email
 
+@injectable()
 export class VerifyPortalEmailUseCase {
-  constructor(private readonly portalUserRepo: IPortalUserRepository) {}
+  constructor(
+    @inject(TOKENS.IPortalUserRepository) private readonly portalUserRepo: IPortalUserRepository,
+  ) {}
 
   async execute(
     token: string,
@@ -117,10 +97,11 @@ export class VerifyPortalEmailUseCase {
 
 // Resend Verification
 
+@injectable()
 export class ResendPortalVerificationUseCase {
   constructor(
-    private readonly portalUserRepo: IPortalUserRepository,
-    private readonly emailService: IEmailService,
+    @inject(TOKENS.IPortalUserRepository) private readonly portalUserRepo: IPortalUserRepository,
+    @inject(TOKENS.IEmailService) private readonly emailService: IEmailService,
   ) {}
 
   async execute(dto: ResendVerificationDto): Promise<void> {
@@ -147,11 +128,12 @@ export class ResendPortalVerificationUseCase {
 
 //  Login
 
+@injectable()
 export class LoginPortalUserUseCase {
   constructor(
-    private readonly portalUserRepo: IPortalUserRepository,
-    private readonly hashService: IHashService,
-    private readonly tokenService: ITokenService,
+    @inject(TOKENS.IPortalUserRepository) private readonly portalUserRepo: IPortalUserRepository,
+    @inject(TOKENS.IHashService) private readonly hashService: IHashService,
+    @inject(TOKENS.ITokenService) private readonly tokenService: ITokenService,
   ) {}
 
   async execute(dto: LoginUserDto) {
@@ -194,10 +176,11 @@ export class LoginPortalUserUseCase {
 
 //  Forgot Password
 
+@injectable()
 export class ForgotPasswordPortalUseCase {
   constructor(
-    private readonly userRepo: IPortalUserRepository,
-    private readonly emailService: IEmailService,
+    @inject(TOKENS.IPortalUserRepository) private readonly userRepo: IPortalUserRepository,
+    @inject(TOKENS.IEmailService) private readonly emailService: IEmailService,
   ) {}
 
   async execute(dto: ForgotPasswordDto): Promise<void> {
@@ -214,10 +197,11 @@ export class ForgotPasswordPortalUseCase {
 
 // Reset Password
 
+@injectable()
 export class ResetPasswordPortalUseCase {
   constructor(
-    private readonly userRepo: IPortalUserRepository,
-    private readonly hashService: IHashService,
+    @inject(TOKENS.IPortalUserRepository) private readonly userRepo: IPortalUserRepository,
+    @inject(TOKENS.IHashService) private readonly hashService: IHashService,
   ) {}
 
   async execute(dto: ResetPasswordDto): Promise<void> {

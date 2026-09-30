@@ -1,15 +1,19 @@
 import { PrismaClient } from '@prisma/client'
-import type { ILeadRepository } from '@/domian/repositories/ILeadRepository'
+import type { ILeadRepository } from '@/domain/repositories/ILeadRepository'
 import type {
   LeadListItem,
   LeadFilters,
   PaginatedLeads,
   CreateLeadData,
   LeadStatus,
-} from '@/domian/entities/Lead'
+} from '@/domain/entities/Lead'
+import { normalizePagination } from '@/shared/helpers'
+import { injectable, inject } from 'tsyringe'
+import { TOKENS } from '@/infrastructure/di/tokens'
 
+@injectable()
 export class PrismaLeadRepository implements ILeadRepository {
-  constructor(private readonly db: PrismaClient) {}
+  constructor(@inject(TOKENS.PrismaClient) private readonly db: PrismaClient) {}
 
   private map(row: {
     id: string
@@ -56,8 +60,7 @@ export class PrismaLeadRepository implements ILeadRepository {
     companyDsaId: string,
     filters: LeadFilters,
   ): Promise<PaginatedLeads> {
-    const page  = Math.max(1, Number(filters.page)  || 1)
-    const limit = Math.min(100, Math.max(1, Number(filters.limit) || 15))
+    const { page, limit, skip } = normalizePagination(filters.page, filters.limit)
 
     const where: Record<string, unknown> = { companyDsaId }
     if (filters.status) where.status = filters.status
@@ -70,7 +73,7 @@ export class PrismaLeadRepository implements ILeadRepository {
     const [rows, total] = await Promise.all([
       this.db.lead.findMany({
         where,
-        skip: (page - 1) * limit,
+        skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {

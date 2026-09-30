@@ -1,4 +1,4 @@
-import type { Lead, LeadListItem, LeadFilters, PaginatedLeads, CreateLeadData, LeadStatus } from '@/domian/entities/Lead'
+import type { Lead, LeadListItem, LeadFilters, PaginatedLeads, CreateLeadData, LeadStatus } from '@/domain/entities/Lead'
 
 export interface ILeadRepository {
   findAllByCompanyId(companyDsaId: string, filters: LeadFilters): Promise<PaginatedLeads>

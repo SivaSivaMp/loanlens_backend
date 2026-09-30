@@ -1,18 +1,23 @@
-import type { ILeadRepository } from "@/domian/repositories/ILeadRepository";
-import type { LeadFilters, LeadStatus } from "@/domian/entities/Lead";
-import type { ICompanyDSARepository } from "@/domian/repositories/ICompanyDSARepository";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
+import type { ILeadRepository } from "@/domain/repositories/ILeadRepository";
+import type { LeadFilters, LeadStatus } from "@/domain/entities/Lead";
+import type { ICompanyDSARepository } from "@/domain/repositories/ICompanyDSARepository";
 import {
   CompanyNotFoundError,
   LeadNotFoundError,
   PortalUserNotFoundError,
-} from "@/domian/errors/errors";
+} from "@/domain/errors/errors";
+import { LeadStatusPolicy } from "@/domain/domain-services/LeadStatusPolicy";
 import { PrismaClient } from "@prisma/client";
+import { IPortalUserRepository } from "@/domain/repositories/IPortalUserRepository";
 
 // List Leads
+@injectable()
 export class ListLeadsUseCase {
   constructor(
-    private readonly companyRepo: ICompanyDSARepository,
-    private readonly leadRepo: ILeadRepository,
+    @inject(TOKENS.ICompanyDSARepository) private readonly companyRepo: ICompanyDSARepository,
+    @inject(TOKENS.ILeadRepository) private readonly leadRepo: ILeadRepository,
   ) {}
 
   async execute(userId: string, query: LeadFilters) {
@@ -29,10 +34,11 @@ export class ListLeadsUseCase {
 }
 
 //  Get Lead Detail
+@injectable()
 export class GetLeadDetailUseCase {
   constructor(
-    private readonly companyRepo: ICompanyDSARepository,
-    private readonly leadRepo: ILeadRepository,
+    @inject(TOKENS.ICompanyDSARepository) private readonly companyRepo: ICompanyDSARepository,
+    @inject(TOKENS.ILeadRepository) private readonly leadRepo: ILeadRepository,
   ) {}
 
   async execute(userId: string, leadId: string) {
@@ -46,10 +52,11 @@ export class GetLeadDetailUseCase {
 }
 
 //  Assign Lead
+@injectable()
 export class AssignLeadUseCase {
   constructor(
-    private readonly companyRepo: ICompanyDSARepository,
-    private readonly leadRepo: ILeadRepository,
+    @inject(TOKENS.ICompanyDSARepository) private readonly companyRepo: ICompanyDSARepository,
+    @inject(TOKENS.ILeadRepository) private readonly leadRepo: ILeadRepository,
   ) {}
 
   async execute(userId: string, leadId: string, fieldAgentId: string) {
@@ -63,14 +70,13 @@ export class AssignLeadUseCase {
   }
 }
 
-import { IPortalUserRepository } from "@/domian/repositories/IPortalUserRepository";
-
 //  Update Lead Status
+@injectable()
 export class UpdateLeadStatusUseCase {
   constructor(
-    private readonly companyRepo: ICompanyDSARepository,
-    private readonly leadRepo: ILeadRepository,
-    private readonly portalUserRepo: IPortalUserRepository,
+    @inject(TOKENS.ICompanyDSARepository) private readonly companyRepo: ICompanyDSARepository,
+    @inject(TOKENS.ILeadRepository) private readonly leadRepo: ILeadRepository,
+    @inject(TOKENS.IPortalUserRepository) private readonly portalUserRepo: IPortalUserRepository,
   ) {}
 
   async execute(userId: string, leadId: string, status: LeadStatus) {
@@ -82,7 +88,7 @@ export class UpdateLeadStatusUseCase {
 
     const updated = await this.leadRepo.updateStatus(leadId, status);
 
-    const shouldBeActive = status !== "CLOSED" && status !== "REJECTED";
+    const shouldBeActive = LeadStatusPolicy.shouldPortalUserBeActive(status);
     await this.portalUserRepo.setActive(lead.portalUser.id, shouldBeActive);
 
     return updated;
@@ -90,8 +96,11 @@ export class UpdateLeadStatusUseCase {
 }
 
 //  Update Lead Notes
+@injectable()
 export class UpdateLeadNotesUseCase {
-  constructor(private readonly leadRepo: ILeadRepository) {}
+  constructor(
+    @inject(TOKENS.ILeadRepository) private readonly leadRepo: ILeadRepository,
+  ) {}
 
   async execute(leadId: string, notes: string) {
     return this.leadRepo.updateNotes(leadId, notes);
@@ -99,11 +108,12 @@ export class UpdateLeadNotesUseCase {
 }
 
 //  Create Lead
+@injectable()
 export class CreateLeadUseCase {
   constructor(
-    private readonly companyRepo: ICompanyDSARepository,
-    private readonly leadRepo: ILeadRepository,
-    private readonly db: PrismaClient,
+    @inject(TOKENS.ICompanyDSARepository) private readonly companyRepo: ICompanyDSARepository,
+    @inject(TOKENS.ILeadRepository) private readonly leadRepo: ILeadRepository,
+    @inject(TOKENS.PrismaClient) private readonly db: PrismaClient,
   ) {}
 
   async execute(

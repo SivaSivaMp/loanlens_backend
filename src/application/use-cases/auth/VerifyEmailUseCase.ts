@@ -1,8 +1,14 @@
-import { InvalidTokenError } from "@/domian/errors/errors";
-import { IUserRepository } from "@/domian/repositories/IUserRepository";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
+import { InvalidTokenError } from "@/domain/errors/errors";
+import { EmailVerificationTokenVO } from "@/domain/entities/tokens/EmailVerificationToken";
+import { IUserRepository } from "@/domain/repositories/IUserRepository";
 
+@injectable()
 export class VerifyEmailUseCase {
-  constructor(private readonly userRepo: IUserRepository) {}
+  constructor(
+    @inject(TOKENS.IUserRepository) private readonly userRepo: IUserRepository,
+  ) {}
 
   async execute(
     token: string,
@@ -15,7 +21,7 @@ export class VerifyEmailUseCase {
       return { status: "already_verified" };
     }
 
-    if (record.expiresAt < new Date()) {
+    if (new EmailVerificationTokenVO(record).isExpired()) {
       throw new InvalidTokenError(
         "Verification link has expired. Please request a new one.",
       );

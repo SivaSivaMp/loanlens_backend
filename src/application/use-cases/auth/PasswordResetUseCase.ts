@@ -1,17 +1,21 @@
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
 import crypto from "crypto";
 import {
   ForgotPasswordDto,
   ResetPasswordDto,
 } from "@/application/dtos/auth/auth.dto";
 import { IEmailService } from "@/application/interfaces/IEmailService";
-import { IUserRepository } from "@/domian/repositories/IUserRepository";
+import { IUserRepository } from "@/domain/repositories/IUserRepository";
 import { IHashService } from "@/application/interfaces/IHashService";
-import { InvalidTokenError } from "@/domian/errors/errors";
+import { InvalidTokenError } from "@/domain/errors/errors";
+import { PasswordResetTokenVO } from "@/domain/entities/tokens/PasswordResetToken";
 
+@injectable()
 export class ForgotPasswordUseCase {
   constructor(
-    private readonly userRepo: IUserRepository,
-    private readonly emailService: IEmailService,
+    @inject(TOKENS.IUserRepository) private readonly userRepo: IUserRepository,
+    @inject(TOKENS.IEmailService) private readonly emailService: IEmailService,
   ) {}
 
   async execute(dto: ForgotPasswordDto): Promise<void> {
@@ -27,19 +31,22 @@ export class ForgotPasswordUseCase {
   }
 }
 
+@injectable()
 export class ResetPasswordUseCase {
   constructor(
-    private readonly userRepo: IUserRepository,
-    private readonly hashService: IHashService,
+    @inject(TOKENS.IUserRepository) private readonly userRepo: IUserRepository,
+    @inject(TOKENS.IHashService) private readonly hashService: IHashService,
   ) {}
 
   async execute(dto: ResetPasswordDto): Promise<void> {
     const record = await this.userRepo.findPasswordResetToken(dto.token);
 
     if (!record) throw new InvalidTokenError("Invalid or expired reset link");
-    if (record.used)
+
+    const tokenVO = new PasswordResetTokenVO(record);
+    if (tokenVO.isUsed())
       throw new InvalidTokenError("This reset link has already been used");
-    if (record.expiresAt < new Date())
+    if (tokenVO.isExpired())
       throw new InvalidTokenError(
         "Reset link has expired. Please request a new one.",
       );

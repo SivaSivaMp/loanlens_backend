@@ -1,3 +1,5 @@
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
 import { LoginUserDto } from "@/application/dtos/auth/auth.dto";
 import { IHashService } from "@/application/interfaces/IHashService";
 import { ITokenService } from "@/application/interfaces/ITokenService";
@@ -5,8 +7,9 @@ import {
   AccountDisabledError,
   EmailNotVerifiedError,
   InvalidCredentialsError,
-} from "@/domian/errors/errors";
-import { IUserRepository } from "@/domian/repositories/IUserRepository";
+} from "@/domain/errors/errors";
+import { UserDomain } from "@/domain/entities/User";
+import { IUserRepository } from "@/domain/repositories/IUserRepository";
 
 export interface LoginResult {
   accessToken: string;
@@ -18,11 +21,12 @@ export interface LoginResult {
   };
 }
 
+@injectable()
 export class LoginUserUseCase {
   constructor(
-    private readonly userRepo: IUserRepository,
-    private readonly hashService: IHashService,
-    private readonly tokenService: ITokenService,
+    @inject(TOKENS.IUserRepository) private readonly userRepo: IUserRepository,
+    @inject(TOKENS.IHashService) private readonly hashService: IHashService,
+    @inject(TOKENS.ITokenService) private readonly tokenService: ITokenService,
   ) {}
 
   async execute(dto: LoginUserDto): Promise<LoginResult> {
@@ -37,25 +41,26 @@ export class LoginUserUseCase {
     );
     if (!valid) throw new InvalidCredentialsError();
 
-    // 3. Check account status
-    if (!user.isActive) throw new AccountDisabledError();
-    if (!user.emailVerified) throw new EmailNotVerifiedError();
+    // 3. Check account status via domain rules
+    const userDomain = new UserDomain(user);
+    if (!userDomain.isAccountActive()) throw new AccountDisabledError();
+    if (!userDomain.hasVerifiedEmail()) throw new EmailNotVerifiedError();
 
     // 4. Generate tokens
     const accessToken = this.tokenService.signAccessToken({
-      userId: user.id,
-      role: user.role,
+      userId: userDomain.id,
+      role: userDomain.role,
     });
-    const refreshToken = this.tokenService.signRefreshToken(user.id);
+    const refreshToken = this.tokenService.signRefreshToken(userDomain.id);
 
     // 5. Persist refresh token
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    await this.userRepo.createRefreshToken(user.id, refreshToken, expiresAt);
+    await this.userRepo.createRefreshToken(userDomain.id, refreshToken, expiresAt);
 
     return {
       accessToken,
       refreshToken,
-      user: { id: user.id, email: user.email, role: user.role },
+      user: { id: userDomain.id, email: userDomain.email, role: userDomain.role },
     };
   }
 }

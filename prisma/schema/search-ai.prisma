@@ -1,0 +1,38 @@
+// ─────────────────────────────────────────────────
+// M05 — Smart Search   M06 — AI Advisor
+// Models: SavedSearch, AIConversation
+// ─────────────────────────────────────────────────
+
+model SavedSearch {
+  id           String   @id @default(cuid())
+  fieldAgentId String
+  customerId   String?
+  label        String?
+  searchInput  Json
+  resultCount  Int
+  createdAt    DateTime @default(now())
+
+  fieldAgent  FieldAgentDSA       @relation(fields: [fieldAgentId], references: [id])
+  customer    Customer?           @relation(fields: [customerId], references: [id])
+  impressions ProductImpression[]
+
+  @@index([fieldAgentId])
+  @@index([customerId])
+  @@map("saved_searches")
+}
+
+model AIConversation {
+  id                String   @id @default(cuid())
+  fieldAgentId      String
+  customerId        String?
+  messages          Json
+  productContextIds String[]
+  createdAt         DateTime @default(now())
+  lastMessageAt     DateTime @default(now()) @updatedAt
+
+  fieldAgent FieldAgentDSA @relation(fields: [fieldAgentId], references: [id])
+  customer   Customer?     @relation(fields: [customerId], references: [id])
+
+  @@index([fieldAgentId])
+  @@map("ai_conversations")
+}

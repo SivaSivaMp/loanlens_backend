@@ -4,10 +4,12 @@ import {
   TokenPayload,
 } from "@/application/interfaces/ITokenService";
 import { env } from "@/config/env";
-import { InvalidTokenError } from "@/domian/errors/errors";
+import { InvalidTokenError } from "@/domain/errors/errors";
 import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";
+import { injectable } from "tsyringe";
 
+@injectable()
 export class JwtTokenService implements ITokenService {
   //B2B toker
   signAccessToken(payload: TokenPayload): string {

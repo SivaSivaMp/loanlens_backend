@@ -1,0 +1,132 @@
+// ─────────────────────────────────────────────────
+// Shared Enums — used across multiple domain models
+// ─────────────────────────────────────────────────
+
+enum UserRole {
+  BANK_ADMIN
+  COMPANY_DSA
+  FIELD_AGENT
+}
+
+enum BankType {
+  BANK
+  NBFC
+  HFC
+}
+
+enum LoanType {
+  HOME
+  PERSONAL
+  CAR
+  BUSINESS
+  GOLD
+  LAP
+}
+
+enum EmploymentType {
+  SALARIED
+  SELF_EMPLOYED
+  BOTH
+}
+
+enum RateType {
+  FIXED
+  FLOATING
+  BOTH
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+}
+
+enum CustomerVisibility {
+  PRIVATE
+  COMPANY
+}
+
+enum CustomerStatus {
+  NEW
+  SEARCHING
+  COMPARING
+  APPLIED
+  DOCS_SUBMITTED
+  PROCESSING
+  APPROVED
+  REJECTED
+  DISBURSED
+  CLOSED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  DOCS_SUBMITTED
+  PROCESSING
+  APPROVED
+  REJECTED
+  DISBURSED
+}
+
+enum CommissionStatus {
+  EXPECTED
+  DUE
+  INVOICED
+  PAID
+  DISPUTED
+}
+
+enum NotificationType {
+  RATE_CHANGE
+  NEW_PRODUCT
+  APPLICATION_UPDATE
+  COMMISSION_UPDATE
+  INVITE
+  SYSTEM
+}
+
+enum DisbursementReportStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum LeadStatus {
+  PENDING
+  ASSIGNED
+  PROPOSAL_SENT
+  CONFIRMED
+  REJECTED
+  CLOSED
+}
+
+enum ProposalStatus {
+  DRAFT
+  SENT
+  VIEWED
+  CONFIRMED
+  REJECTED
+}
+
+enum CallPurpose {
+  PROPOSAL_DISCUSSION
+  DOCUMENT_VERIFICATION
+  GENERAL_QUERY
+}
+
+enum CallStatus {
+  REQUESTED
+  SCHEDULED
+  ONGOING
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PortalNotificationType {
+  PROPOSAL_RECEIVED
+  CALL_CONFIRMED
+  CALL_REMINDER
+  APPLICATION_UPDATE
+  SYSTEM
+}

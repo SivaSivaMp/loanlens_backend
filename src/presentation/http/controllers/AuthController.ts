@@ -59,7 +59,7 @@ export class AuthController {
 
   forgotPassword = asyncHandler(async (req: Request, res: Response) => {
     await this.forgotPasswordUseCase.execute(req.body);
-    // Always returns 200 — never reveal if email is registered
+
     return successResponse(
       res,
       null,
@@ -77,7 +77,6 @@ export class AuthController {
   });
 
   me = asyncHandler(async (req: Request, res: Response) => {
-    // req.user is attached by authenticate middleware
     return successResponse(res, req.user, "Authenticated user");
   });
 }

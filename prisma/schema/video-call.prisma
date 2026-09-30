@@ -1,0 +1,50 @@
+// ─────────────────────────────────────────────────
+// M14 — Video Call Sessions
+// Models: VideoCallSession, AgentAvailabilitySlot
+// ─────────────────────────────────────────────────
+
+model VideoCallSession {
+  id                 String      @id @default(cuid())
+  leadId             String
+  fieldAgentId       String
+  portalUserId       String?
+  purpose            CallPurpose
+  status             CallStatus  @default(REQUESTED)
+  scheduledAt        DateTime?
+  startedAt          DateTime?
+  endedAt            DateTime?
+  durationSeconds    Int?
+  channelName        String      @unique @default(cuid())
+  provider           String      @default("agora")
+  agentNotes         String?
+  customerNote       String?
+  preferredTime      String?
+  cancellationReason String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  lead       Lead          @relation(fields: [leadId], references: [id])
+  fieldAgent FieldAgentDSA @relation(fields: [fieldAgentId], references: [id])
+
+  @@index([leadId])
+  @@index([fieldAgentId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("video_call_sessions")
+}
+
+model AgentAvailabilitySlot {
+  id           String    @id @default(cuid())
+  fieldAgentId String
+  slotDate     DateTime
+  slotTime     String
+  isBooked     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+
+  fieldAgent FieldAgentDSA @relation(fields: [fieldAgentId], references: [id], onDelete: Cascade)
+
+  @@index([fieldAgentId])
+  @@index([slotDate])
+  @@index([fieldAgentId, slotDate, isBooked])
+  @@map("agent_availability_slots")
+}

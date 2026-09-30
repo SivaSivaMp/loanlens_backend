@@ -1,0 +1,83 @@
+// ─────────────────────────────────────────────────
+// M04 — Product Catalog
+// Models: LoanProduct, RateSlab, ProductRateHistory
+// ─────────────────────────────────────────────────
+
+model LoanProduct {
+  id                   String         @id @default(cuid())
+  bankId               String
+  name                 String
+  description          String?
+  brochureUrl          String?
+  loanType             LoanType
+  status               ProductStatus  @default(DRAFT)
+  serviceableStates    String[]
+  rateType             RateType       @default(FIXED)
+  rateMin              Float
+  rateMax              Float
+  minAmount            Float
+  maxAmount            Float
+  minTenureMonths      Int
+  maxTenureMonths      Int
+  minMonthlyIncome     Float
+  maxMonthlyIncome     Float?
+  minAge               Int
+  maxAge               Int
+  acceptedEmployment   EmploymentType[]
+  minEmploymentYears   Float
+  minCibilScore        Int
+  processingFeePercent Float          @default(0)
+  commissionPercent    Float
+  commissionPayoutDays Int            @default(30)
+  commissionNotes      String?
+  requiredDocuments    String[]
+  ltvPercent           Float?
+  propertyTypes        String[]
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  bank         Bank                    @relation(fields: [bankId], references: [id])
+  rateSlabs    RateSlab[]
+  rateHistory  ProductRateHistory[]
+  applications LoanApplication[]
+  commissions  CommissionTransaction[]
+  splitRules   CommissionSplitRule[]
+  impressions  ProductImpression[]
+
+  @@index([bankId])
+  @@index([loanType])
+  @@index([status])
+  @@map("loan_products")
+}
+
+model RateSlab {
+  id          String  @id @default(cuid())
+  productId   String
+  minAmount   Float
+  maxAmount   Float
+  ratePercent Float
+  label       String?
+
+  product LoanProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("rate_slabs")
+}
+
+model ProductRateHistory {
+  id          String   @id @default(cuid())
+  productId   String
+  oldRateMin  Float?
+  oldRateMax  Float?
+  newRateMin  Float
+  newRateMax  Float
+  changedById String
+  notes       String?
+  changedAt   DateTime @default(now())
+
+  product   LoanProduct @relation(fields: [productId], references: [id])
+  changedBy User        @relation(fields: [changedById], references: [id])
+
+  @@index([productId])
+  @@map("product_rate_history")
+}

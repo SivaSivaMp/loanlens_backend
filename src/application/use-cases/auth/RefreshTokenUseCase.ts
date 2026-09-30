@@ -1,16 +1,20 @@
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
 import { ITokenService } from "@/application/interfaces/ITokenService";
-import { InvalidTokenError, UserNotFoundError } from "@/domian/errors/errors";
-import { IUserRepository } from "@/domian/repositories/IUserRepository";
+import { InvalidTokenError, UserNotFoundError } from "@/domain/errors/errors";
+import { RefreshTokenVO } from "@/domain/entities/tokens/RefreshToken";
+import { IUserRepository } from "@/domain/repositories/IUserRepository";
 
 export interface RefreshResult {
   accessToken: string;
   refreshToken: string;
 }
 
+@injectable()
 export class RefreshTokenUseCase {
   constructor(
-    private readonly userRepo: IUserRepository,
-    private readonly tokenService: ITokenService,
+    @inject(TOKENS.IUserRepository) private readonly userRepo: IUserRepository,
+    @inject(TOKENS.ITokenService) private readonly tokenService: ITokenService,
   ) {}
 
   async execute(oldRefreshToken: string): Promise<RefreshResult> {
@@ -22,11 +26,7 @@ export class RefreshTokenUseCase {
     }
 
     const storedToken = await this.userRepo.findRefreshToken(oldRefreshToken);
-    if (
-      !storedToken ||
-      storedToken.revokedAt ||
-      storedToken.expiresAt < new Date()
-    ) {
+    if (!storedToken || !new RefreshTokenVO(storedToken).isValid()) {
       throw new InvalidTokenError("Refresh token is invalid or expired");
     }
 

@@ -1,4 +1,4 @@
-import { DomainError } from "@/domian/errors/DomainError";
+import { DomainError } from "@/domain/errors/DomainError";
 import { Request, Response, NextFunction } from "express";
 import { ZodObject, ZodRawShape, ZodError } from "zod";
 

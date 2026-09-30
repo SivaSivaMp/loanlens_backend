@@ -1,6 +1,8 @@
-import { IPortalUserRepository } from "@/domian/repositories/IPortalUserRepository";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
+import { IPortalUserRepository } from "@/domain/repositories/IPortalUserRepository";
 import { ITokenService } from "@/application/interfaces/ITokenService";
-import { AccountDisabledError } from "@/domian/errors/errors";
+import { AccountDisabledError } from "@/domain/errors/errors";
 
 export interface GoogleProfile {
   googleId: string;
@@ -8,10 +10,11 @@ export interface GoogleProfile {
   fullName: string;
 }
 
+@injectable()
 export class GoogleOAuthUseCase {
   constructor(
-    private readonly portalUserRepo: IPortalUserRepository,
-    private readonly tokenService: ITokenService,
+    @inject(TOKENS.IPortalUserRepository) private readonly portalUserRepo: IPortalUserRepository,
+    @inject(TOKENS.ITokenService) private readonly tokenService: ITokenService,
   ) {}
 
   async execute(profile: GoogleProfile) {

@@ -1,0 +1,15 @@
+// ============================================================
+// LoanLens — Prisma Schema Root (Multi-file)
+// prismaSchemaFolder preview feature enabled
+// Each domain module lives in prisma/schema/models/
+// ============================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

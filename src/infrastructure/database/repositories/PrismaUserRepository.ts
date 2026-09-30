@@ -2,18 +2,21 @@ import {
   CreateUserData,
   CreateUserWithProfileData,
   IUserRepository,
-} from "@/domian/repositories/IUserRepository";
-import { ResourceNotFoundError } from "@/domian/errors/errors";
+} from "@/domain/repositories/IUserRepository";
+import { ResourceNotFoundError } from "@/domain/errors/errors";
 import { PrismaClient } from "@prisma/client";
 import {
   User,
   RefreshToken,
   PasswordResetToken,
   EmailVerificationToken,
-} from "@/domian/entities/User";
+} from "@/domain/entities/User";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/infrastructure/di/tokens";
 
+@injectable()
 export class PrismaUserRepository implements IUserRepository {
-  constructor(private readonly db: PrismaClient) {}
+  constructor(@inject(TOKENS.PrismaClient) private readonly db: PrismaClient) {}
 
   //  User
 

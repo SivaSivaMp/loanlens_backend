@@ -1,0 +1,75 @@
+// ─────────────────────────────────────────────────
+// M03 — DSA
+// Models: CompanyDSA, FieldAgentDSA, CommissionSplitRule
+// ─────────────────────────────────────────────────
+
+model CompanyDSA {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  companyName       String
+  gstin             String?
+  companyCode       String   @unique
+  razorpayContactId String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user           User                   @relation(fields: [userId], references: [id])
+  fieldAgents    FieldAgentDSA[]
+  bankAgreements CompanyBankAgreement[]
+  splitRules     CommissionSplitRule[]
+  customers      Customer[]
+  applications   LoanApplication[]
+  commissions    CommissionTransaction[]
+  leads          Lead[]
+
+  @@map("company_dsas")
+}
+
+model FieldAgentDSA {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  companyDsaId          String
+  fullName              String
+  phone                 String
+  bankAccountNumber     String?
+  ifscCode              String?
+  pan                   String?
+  razorpayFundAccountId String?
+  isActive              Boolean  @default(true)
+  joinedAt              DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user            User                    @relation(fields: [userId], references: [id])
+  company         CompanyDSA              @relation(fields: [companyDsaId], references: [id])
+  customers       Customer[]
+  savedSearches   SavedSearch[]
+  applications    LoanApplication[]
+  commissions     CommissionTransaction[]
+  aiConversations AIConversation[]
+  impressions     ProductImpression[]
+  assignedLeads   Lead[]
+  proposals       Proposal[]
+  callSessions    VideoCallSession[]
+  availability    AgentAvailabilitySlot[]
+
+  @@index([companyDsaId])
+  @@map("field_agent_dsas")
+}
+
+model CommissionSplitRule {
+  id            String   @id @default(cuid())
+  companyDsaId  String
+  fieldAgentId  String?
+  productId     String?
+  agentPercent  Float
+  effectiveFrom DateTime @default(now())
+  isActive      Boolean  @default(true)
+
+  companyDsa CompanyDSA   @relation(fields: [companyDsaId], references: [id])
+  product    LoanProduct? @relation(fields: [productId], references: [id])
+
+  @@index([companyDsaId])
+  @@index([fieldAgentId])
+  @@map("commission_split_rules")
+}
