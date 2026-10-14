@@ -5,10 +5,10 @@
  * interface. Use these constants everywhere — never use raw strings.
  */
 export const TOKENS = {
-  // ─── Infrastructure ────────────────────────────────────────────────
+  //  Infrastructure
   PrismaClient: "PrismaClient",
 
-  // ─── Repositories ──────────────────────────────────────────────────
+  //  Repositories
   IUserRepository: "IUserRepository",
   IPortalUserRepository: "IPortalUserRepository",
   IBankRepository: "IBankRepository",
@@ -18,7 +18,7 @@ export const TOKENS = {
   ILeadRepository: "ILeadRepository",
   IAgreementRepository: "IAgreementRepository",
 
-  // ─── Services ──────────────────────────────────────────────────────
+  //  Services
   IHashService: "IHashService",
   ITokenService: "ITokenService",
   IEmailService: "IEmailService",

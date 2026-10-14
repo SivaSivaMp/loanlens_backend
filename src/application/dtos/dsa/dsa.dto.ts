@@ -109,7 +109,7 @@ export const UpdateSplitRuleSchema = z.object({
 });
 export type UpdateSplitRuleDto = z.infer<typeof UpdateSplitRuleSchema>["body"];
 
-// ─── DSA Leads (M13) ─────────────────────────────────────────────────────────
+//  DSA Leads (M13)
 
 export const LeadListQuerySchema = z.object({
   query: z.object({
@@ -147,7 +147,9 @@ export const UpdateLeadStatusSchema = z.object({
     ]),
   }),
 });
-export type UpdateLeadStatusDto = z.infer<typeof UpdateLeadStatusSchema>["body"];
+export type UpdateLeadStatusDto = z.infer<
+  typeof UpdateLeadStatusSchema
+>["body"];
 
 export const UpdateLeadNotesSchema = z.object({
   body: z.object({ internalNotes: z.string() }),
@@ -164,4 +166,3 @@ export const CreateLeadSchema = z.object({
   }),
 });
 export type CreateLeadDto = z.infer<typeof CreateLeadSchema>["body"];
-

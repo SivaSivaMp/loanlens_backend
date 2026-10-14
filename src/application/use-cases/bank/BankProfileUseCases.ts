@@ -23,7 +23,7 @@ export class GetBankProfileUseCase {
   }
 }
 
-// ─── Update Bank Profile ──────────────────────────────────────────────────────
+// ─── Update Bank Profile
 
 @injectable()
 export class UpdateBankProfileUseCase {
@@ -38,23 +38,24 @@ export class UpdateBankProfileUseCase {
   }
 }
 
-// ─── Deactivate Bank ──────────────────────────────────────────────────────────
+// ─── Deactivate Bank
 
 @injectable()
 export class DeactivateBankUseCase {
   constructor(
     @inject(TOKENS.IBankRepository) private readonly bankRepo: IBankRepository,
-    @inject(TOKENS.ILoanProductRepository) private readonly productRepo: ILoanProductRepository,
+    @inject(TOKENS.ILoanProductRepository)
+    private readonly productRepo: ILoanProductRepository,
   ) {}
 
   async execute(userId: string) {
     const bank = await this.bankRepo.findByUserId(userId);
     if (!bank) throw new BankNotFoundError();
-    if (new BankDomain(bank).isAlreadyInactive()) throw new BankAlreadyInactiveError();
+    if (new BankDomain(bank).isAlreadyInactive())
+      throw new BankAlreadyInactiveError();
 
-    // Deactivate bank AND all its active products atomically (handled in repo)
     await this.bankRepo.deactivate(bank.id);
-    // productRepo.deleteProductsByBankId sets all ACTIVE products to INACTIVE
+
     await this.productRepo.deleteProductsByBankId(bank.id);
   }
 }

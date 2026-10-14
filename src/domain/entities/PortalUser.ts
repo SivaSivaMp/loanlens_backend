@@ -25,3 +25,4 @@ export interface PortalRefreshToken {
   revokedAt: Date | null;
   createdAt: Date;
 }
+//create interface refresh token, do not repeating
